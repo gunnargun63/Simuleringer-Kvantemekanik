@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kvantemekanik — Simuleringer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0a0e17;
+      --card-bg:   #111927;
+      --border:    #1a2e45;
+      --accent:    #00d4e8;
+      --text:      #c8dce8;
+      --text-dim:  #5a7a90;
+      --text-head: #e8f4f8;
+      --glow:      0 0 16px rgba(0,212,232,0.25);
+    }
+    body.light {
+      --bg:        #f0f4f8;
+      --card-bg:   #ffffff;
+      --border:    #b0c8dc;
+      --accent:    #007890;
+      --text:      #1a3040;
+      --text-dim:  #6a8a9a;
+      --text-head: #0a1820;
+      --glow:      0 0 16px rgba(0,120,144,0.15);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Exo 2', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+    .back-link {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--accent); }
+    .back-link::before { content: '← '; }
+    .toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      padding: 6px 14px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+    header { margin-bottom: 48px; }
+    .label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      margin-bottom: 20px;
+    }
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 60%);
+      opacity: 0.5;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 560px) {
+      .card-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      display: block;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: 24px 24px 22px;
+      text-decoration: none;
+      border-radius: 2px;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      position: relative;
+      animation: fadeUp 0.4s ease both;
+    }
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.10s; }
+    .card:nth-child(3) { animation-delay: 0.15s; }
+    .card:nth-child(4) { animation-delay: 0.20s; }
+    .card:nth-child(5) { animation-delay: 0.25s; }
+    .card:nth-child(6) { animation-delay: 0.30s; }
+    .card:nth-child(7) { animation-delay: 0.35s; }
+    .card:nth-child(8) { animation-delay: 0.40s; }
+    .card::after {
+      content: '→';
+      font-family: 'Share Tech Mono', monospace;
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      color: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      transform: translateX(4px);
+      font-size: 1rem;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+      transform: translateY(-2px);
+    }
+    .card:hover::after {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-head);
+    }
+    .card-icon {
+      flex-shrink: 0;
+      display: flex;
+      color: var(--accent);
+    }
+    .card-icon svg { width: 22px; height: 22px; display: block; }
+    .card-desc {
+      font-size: 0.84rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      padding-right: 28px;
+    }
+    footer {
+      margin-top: 72px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="top-bar">
+    <a class="back-link" href="https://gunnargun63.github.io/">Forside</a>
+    <button class="toggle-btn" onclick="document.body.classList.toggle('light');this.textContent=document.body.classList.contains('light')?'◐ MØrk':'◑ LYS'">◑ LYS</button>
+  </div>
+
+  <header>
+    <p class="label">Gymnasiefysik — Interaktive simuleringer</p>
+    <h1>Kvantemekanik</h1>
+    <div class="divider"></div>
+  </header>
+
+  <div class="card-grid">
+
+    <a class="card" href="BB84-prtokol.html">
+      <div class="card-head">
+        <div class="card-title">BB84 - Kvantenøgledistribution</div>
+        <span class="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <!-- Rektilineær basis (+) -->
+            <line x1="12" y1="3.5" x2="12" y2="20.5"/>
+            <line x1="3.5" y1="12" x2="20.5" y2="12"/>
+            <!-- Diagonal basis (×) -->
+            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/>
+          </svg>
+        </span>
+      </div>
+      <div class="card-desc">Alice og Bob udveksler hemmelig nøgle. Eva lytter med.</div>
+    </a>
+  </div>
+
+  <footer>Gunnar Gunnarsson · Opdateret <span id="opdateret">juni 2026</span></footer>
+
+</div>
+
+<script>
+  (function () {
+    var maaneder = ['januar','februar','marts','april','maj','juni','juli','august',
+                    'september','oktober','november','december'];
+    var d = new Date(document.lastModified);
+    if (!isNaN(d.getTime())) {
+      document.getElementById('opdateret').textContent = maaneder[d.getMonth()] + ' ' + d.getFullYear();
+    }
+  })();
+</script>
+</body>
+</html>
