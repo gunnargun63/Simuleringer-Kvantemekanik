@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BB84 — Kvantenøgledistribution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#030810; --bg1:#060e18; --bg2:#0a1622; --bg3:#0f1e2d;
+  --border:#1a3a52;
+  --green:#00ff9f; --cyan:#00cfff; --yellow:#ffd93d; --red:#ff4466;
+  --text:#d0eef5; --dim:#8ec8d8;
+  --font:'Courier New','Lucida Console',monospace;
+  --tr:0.15s ease;
+  --alice:#00cfff; --eve:#ff4466; --bob:#00ff9f;
+}
+[data-theme="light"]{
+  --bg0:#e8e0d2; --bg1:#f4eee3; --bg2:#fdfaf4; --bg3:#fdfaf4;
+  --border:#d6cbb8;
+  --green:#1D9E75; --cyan:#378ADD; --yellow:#c07800; --red:#c0306a;
+  --text:#1a1a1a; --dim:#333333;
+  --alice:#378ADD; --eve:#c0306a; --bob:#1D9E75;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  padding:16px;
+  background:var(--bg0); color:var(--text);
+  font-family:var(--font);
+  min-height:100vh;
+}
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px; max-width:1200px; margin-left:auto; margin-right:auto;
+  gap:12px; flex-wrap:wrap;
+}
+.title-wrap{ display:flex; align-items:center; gap:10px; }
+.key-icon{
+  width:22px; height:22px; color:var(--cyan); display:inline-flex;
+  animation:keypulse 2.5s ease-in-out infinite; flex-shrink:0;
+}
+.key-icon svg{ display:block; width:100%; height:100%; fill:currentColor; }
+@keyframes keypulse{
+  0%,100%{ opacity:1;   filter:drop-shadow(0 0 5px var(--cyan)); }
+  50%    { opacity:.55; filter:none; }
+}
+[data-theme="light"] .key-icon{ animation:keypulse-light 2.5s ease-in-out infinite; }
+@keyframes keypulse-light{
+  0%,100%{ opacity:1; }
+  50%    { opacity:.55; }
+}
+h1{
+  font-family:'Orbitron',sans-serif; font-weight:700;
+  font-size:15px; letter-spacing:.20em; text-transform:uppercase;
+  color:var(--green); margin:0;
+  text-shadow:0 0 8px rgba(0,255,159,0.35);
+}
+[data-theme="light"] h1{ text-shadow:none; }
+.header-btns{ display:flex; gap:8px; }
+.btn-util{
+  background:var(--bg2); color:var(--dim);
+  border:1px solid var(--dim);
+  padding:7px 14px; font-family:var(--font); font-size:.8rem;
+  cursor:pointer; transition:var(--tr); font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase;
+}
+.btn-util:hover{
+  border-color:var(--green); color:var(--green);
+  box-shadow:0 0 8px var(--green);
+}
+
+main{
+  display:grid; gap:14px;
+  grid-template-columns:1fr;
+  max-width:1200px; margin:0 auto;
+}
+.row{ display:grid; gap:14px; }
+.row.split{ grid-template-columns:340px 1fr; }
+.row.split-stats{ grid-template-columns:1fr 1fr; }
+
+.box{
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:6px; padding:14px;
+}
+.sec-title{
+  color:var(--green); font-weight:700;
+  letter-spacing:.22em; text-transform:uppercase;
+  font-size:.78rem; padding-bottom:6px; margin-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+
+/* Controls */
+.ctrl{ margin-bottom:14px; }
+.ctrl:last-child{ margin-bottom:0; }
+.ctrl-row{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:6px;
+}
+.ctrl-label{ color:var(--dim); font-size:.85rem; font-weight:700; }
+[data-theme="light"] .ctrl-label{ color:#1a1a1a; }
+.ctrl-val{
+  color:var(--cyan); font-weight:700;
+  font-size:.95rem; font-family:'Courier New',monospace;
+}
+input[type=range]{
+  width:100%; -webkit-appearance:none; background:transparent;
+  margin:4px 0; cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:6px; background:var(--bg3); border-radius:3px;
+  border:1px solid var(--border);
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+  background:var(--cyan); margin-top:-7px; cursor:pointer;
+  border:2px solid var(--bg0);
+}
+input[type=range]::-moz-range-track{
+  height:6px; background:var(--bg3); border-radius:3px;
+  border:1px solid var(--border);
+}
+input[type=range]::-moz-range-thumb{
+  width:18px; height:18px; border-radius:50%;
+  background:var(--cyan); cursor:pointer; border:2px solid var(--bg0);
+}
+
+/* Speed/mode buttons */
+.btn-grp{ display:flex; gap:4px; flex-wrap:wrap; }
+.btn-sm{
+  flex:1; min-width:60px;
+  background:var(--bg3); color:var(--text);
+  border:1px solid var(--border);
+  padding:6px 8px; font-family:var(--font); font-size:.78rem;
+  cursor:pointer; transition:var(--tr); font-weight:700;
+  letter-spacing:.05em;
+}
+.btn-sm:hover{ background:var(--bg2); }
+.btn-sm.active{
+  background:var(--cyan); color:var(--bg0);
+  border-color:var(--cyan);
+}
+[data-theme="light"] .btn-sm{ color:#1a1a1a; font-weight:700; }
+[data-theme="light"] .btn-sm.active{ color:#fff; }
+
+/* Big action buttons */
+.btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.btn-big{
+  flex:1; min-width:90px;
+  background:var(--green); color:var(--bg0);
+  border:none; padding:10px 12px;
+  font-family:var(--font); font-size:.85rem; font-weight:700;
+  cursor:pointer; transition:var(--tr); letter-spacing:.08em;
+  text-transform:uppercase;
+}
+[data-theme="light"] .btn-big{ color:#fff; }
+.btn-big:hover:not(:disabled){ filter:brightness(1.12); }
+.btn-big:disabled{ opacity:.35; cursor:not-allowed; }
+.btn-big.reset{ background:var(--yellow); }
+.btn-big.announce{ background:var(--cyan); }
+.btn-big.compare{ background:var(--red); color:#fff; }
+
+/* Toggle switch */
+.toggle{ display:flex; align-items:center; gap:10px; }
+.tgl{
+  position:relative; width:46px; height:24px;
+  background:var(--bg3); border:1px solid var(--border);
+  border-radius:12px; cursor:pointer; transition:var(--tr);
+  flex-shrink:0;
+}
+.tgl::after{
+  content:''; position:absolute; top:2px; left:2px;
+  width:18px; height:18px; border-radius:50%;
+  background:var(--dim); transition:var(--tr);
+}
+.tgl.on{ background:var(--red); border-color:var(--red); }
+.tgl.on::after{ left:24px; background:#fff; }
+#angleTgl.on{ background:var(--yellow); border-color:var(--yellow); }
+.eve-lbl{ font-family:'Courier New',monospace; font-weight:700; font-size:.85rem; }
+
+/* Visualization canvas */
+.canvas-wrap{ position:relative; }
+canvas{
+  display:block; width:100%; height:240px;
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:4px;
+}
+.phase-bar{
+  display:flex; justify-content:space-around; margin-top:10px;
+  font-size:.7rem; color:var(--dim); font-weight:700;
+  flex-wrap:wrap; gap:4px;
+}
+.phase-bar span{ padding:4px 8px; border-radius:3px; letter-spacing:.08em; }
+.phase-bar span.active{
+  background:var(--green); color:var(--bg0);
+}
+[data-theme="light"] .phase-bar span.active{ color:#fff; }
+[data-theme="light"] .phase-bar span{ color:#1a1a1a; }
+
+/* Stats */
+.stat-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+}
+.stat{
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:4px; padding:10px;
+}
+.stat-label{
+  font-size:.7rem; color:var(--dim); font-weight:700;
+  text-transform:uppercase; letter-spacing:.1em;
+  margin-bottom:4px;
+}
+[data-theme="light"] .stat-label{ color:#1a1a1a; }
+.stat-val{
+  font-family:'Courier New',monospace; font-weight:700;
+  font-size:1.5rem; color:var(--cyan);
+}
+.stat-val.qber-zero{ color:var(--green); }
+.stat-val.qber-low{ color:var(--yellow); }
+.stat-val.qber-high{ color:var(--red); }
+
+/* Key display */
+.key-display{
+  background:var(--bg2); border:1px solid var(--border);
+  border-radius:4px; padding:12px;
+  font-family:'Courier New',monospace; font-weight:700;
+  word-break:break-all; line-height:1.65; font-size:1.05rem;
+  color:var(--green); min-height:72px;
+}
+[data-theme="light"] .key-display{ color:#0e6a4f; }
+
+/* Table */
+.table-wrap{ overflow-x:auto; max-height:380px; overflow-y:auto;
+             border:1px solid var(--border); border-radius:4px; }
+table{
+  width:100%; border-collapse:collapse;
+  font-family:'Courier New',monospace; font-size:.88rem;
+}
+th{
+  background:var(--bg2); color:var(--dim);
+  font-weight:700; text-align:center; padding:8px 6px;
+  border-bottom:2px solid var(--border);
+  text-transform:uppercase; letter-spacing:.05em;
+  font-size:.7rem; position:sticky; top:0; z-index:1;
+}
+[data-theme="light"] th{ color:#1a1a1a; background:var(--bg2); }
+td{
+  padding:5px 6px; text-align:center; color:var(--text);
+  border-bottom:1px solid var(--border);
+}
+tr.status-discard td{ color:var(--dim); opacity:.65; }
+tr.status-key td{ background:rgba(0,255,159,0.10); }
+tr.status-compared td{ background:rgba(255,217,61,0.14); }
+tr.status-compared-err td{ background:rgba(255,68,102,0.18); }
+[data-theme="light"] tr.status-key td{ background:rgba(29,158,117,0.12); }
+[data-theme="light"] tr.status-compared td{ background:rgba(192,120,0,0.12); }
+[data-theme="light"] tr.status-compared-err td{ background:rgba(192,48,106,0.16); }
+[data-theme="light"] tr.status-discard td{ color:#444; opacity:.85; font-weight:700; }
+.basis-plus{ color:var(--cyan); font-weight:700; }
+.basis-cross{ color:var(--yellow); font-weight:700; }
+[data-theme="light"] .basis-plus{ color:#1f5e9d; font-weight:700; }
+[data-theme="light"] .basis-cross{ color:#8a5300; font-weight:700; }
+.bit-0{ color:var(--dim); font-weight:700; }
+.bit-1{ color:var(--text); font-weight:700; }
+[data-theme="light"] .bit-0{ color:#555; font-weight:700; }
+[data-theme="light"] .bit-1{ color:#000; font-weight:700; }
+
+/* Explanation */
+.explain p{ margin:0 0 8px 0; line-height:1.55; }
+.explain p:last-child{ margin:0; }
+[data-theme="light"] .explain p{ color:#161616; font-weight:700; }
+.legend{
+  display:flex; flex-wrap:wrap; gap:14px; margin-top:8px;
+  padding-top:10px; border-top:1px solid var(--border);
+}
+.legend-item{ display:flex; align-items:center; gap:6px; font-size:.82rem; }
+.legend-sw{ width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+
+.muted{ color:var(--dim); opacity:.85; }
+[data-theme="light"] .muted{ color:#555; opacity:1; font-weight:700; }
+
+.hint{
+  background:rgba(0,207,255,0.06);
+  border-left:3px solid var(--cyan);
+  padding:8px 12px; margin:10px 0 4px 0;
+  font-size:.92rem; line-height:1.5;
+}
+[data-theme="light"] .hint{
+  background:rgba(55,138,221,0.10);
+  color:#161616; font-weight:700;
+}
+
+.hide{ display:none !important; }
+
+/* Modal popup (opgaveark) */
+.modal-bg{
+  position:fixed; inset:0; z-index:100;
+  background:rgba(0,0,0,0.72);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+  animation:fadein .2s ease;
+}
+[data-theme="light"] .modal-bg{ background:rgba(0,0,0,0.45); }
+@keyframes fadein{ from{opacity:0} to{opacity:1} }
+.modal-box{
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:6px; max-width:820px; width:100%;
+  max-height:90vh; overflow-y:auto;
+  padding:24px 28px; position:relative;
+  box-shadow:0 0 30px rgba(0,255,159,0.15);
+}
+[data-theme="light"] .modal-box{ box-shadow:0 4px 24px rgba(0,0,0,0.18); }
+.modal-close{
+  position:absolute; top:10px; right:10px;
+  width:32px; height:32px; border-radius:4px;
+  background:var(--bg2); color:var(--dim);
+  border:1px solid var(--border);
+  font-family:var(--font); font-size:1.1rem; font-weight:700;
+  cursor:pointer; transition:var(--tr);
+  line-height:1; display:flex; align-items:center; justify-content:center;
+}
+.modal-close:hover{ border-color:var(--green); color:var(--green); }
+.modal-box h2{
+  color:var(--green); font-family:'Orbitron',sans-serif;
+  font-size:15px; letter-spacing:.18em; text-transform:uppercase;
+  margin:24px 0 12px 0; padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.modal-box h2:first-child{ margin-top:0; }
+.modal-box h1{
+  font-family:'Orbitron',sans-serif;
+  font-size:18px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--green); margin:0 0 4px 0;
+}
+.modal-box .subtitle{ color:var(--dim); font-size:.9rem; margin-bottom:18px; }
+.modal-box p{ line-height:1.55; margin:0 0 10px 0; font-size:.92rem; }
+[data-theme="light"] .modal-box p{ color:#161616; }
+.modal-box ul, .modal-box ol{ margin:0 0 12px 0; padding-left:24px; line-height:1.55; font-size:.92rem; }
+.modal-box li{ margin-bottom:4px; }
+[data-theme="light"] .modal-box li{ color:#161616; }
+.modal-box table{
+  width:auto; border-collapse:collapse;
+  font-family:'Courier New',monospace; font-size:.88rem;
+  margin:0 0 14px 0;
+}
+.modal-box th, .modal-box td{
+  border:1px solid var(--border);
+  padding:5px 12px; text-align:left;
+}
+.modal-box th{
+  background:var(--bg2); color:var(--green); font-weight:700;
+  text-transform:none; letter-spacing:0; font-size:.85rem;
+  position:static;
+}
+[data-theme="light"] .modal-box th{ color:#1D9E75; }
+.modal-box hr{
+  border:none; border-top:1px solid var(--border);
+  margin:18px 0;
+}
+.modal-box .op{
+  background:rgba(0,207,255,0.06);
+  border-left:3px solid var(--cyan);
+  padding:8px 12px; margin:10px 0;
+}
+[data-theme="light"] .modal-box .op{ background:rgba(55,138,221,0.10); }
+.modal-box code{
+  background:var(--bg3); padding:1px 4px; border-radius:3px;
+  font-size:.85em;
+}
+.modal-box .footer-note{
+  color:var(--dim); font-style:italic; font-size:.85rem;
+  margin-top:20px; padding-top:12px; border-top:1px solid var(--border);
+}
+
+@media (max-width:820px){
+  .row.split{ grid-template-columns:1fr; }
+  .row.split-stats{ grid-template-columns:1fr; }
+  canvas{ height:200px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-wrap">
+    <span class="key-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+    </span>
+    <h1>BB84 — KVANTENØGLEDISTRIBUTION</h1>
+  </div>
+  <div class="header-btns">
+    <button class="btn-util" id="taskBtn">Opgave</button>
+    <button class="btn-util" id="copyBtn">Kopier kode</button>
+    <button class="btn-util" id="themeBtn">Lyst tema</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="row split">
+    <div class="box">
+      <div class="sec-title">Indstillinger</div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Antal fotoner</span>
+          <span class="ctrl-val" id="nVal">16</span>
+        </div>
+        <input type="range" id="nSlider" min="8" max="256" value="16" step="8">
+      </div>
+
+      <div class="ctrl">
+        <div class="toggle">
+          <span class="ctrl-label">Eva aflytter</span>
+          <div class="tgl" id="eveTgl"></div>
+          <span class="eve-lbl" id="eveLbl" style="color:var(--dim)">FRA</span>
+        </div>
+      </div>
+
+      <div class="ctrl" id="eveFracCtrl" style="display:none">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Eva aflytter andel</span>
+          <span class="ctrl-val" id="eveFracVal">100 %</span>
+        </div>
+        <input type="range" id="eveFracSlider" min="0" max="100" value="100" step="5">
+      </div>
+
+      <div class="ctrl">
+        <div class="toggle">
+          <span class="ctrl-label">Variabel basisvinkel</span>
+          <div class="tgl" id="angleTgl"></div>
+          <span class="eve-lbl" id="angleLbl" style="color:var(--dim)">FRA</span>
+        </div>
+      </div>
+
+      <div class="ctrl" id="angleCtrl" style="display:none">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Basisvinkel θ (mellem + og ×)</span>
+          <span class="ctrl-val" id="angleVal">45°</span>
+        </div>
+        <input type="range" id="angleSlider" min="10" max="80" value="45" step="5">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Andel af nøglen til fejltjek</span>
+          <span class="ctrl-val" id="cmpVal">25 %</span>
+        </div>
+        <input type="range" id="cmpSlider" min="5" max="50" value="25" step="5">
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Tempo</span>
+        </div>
+        <div class="btn-grp" id="speedGrp">
+          <button class="btn-sm" data-speed="step">Trin</button>
+          <button class="btn-sm active" data-speed="slow">Langsom</button>
+          <button class="btn-sm" data-speed="fast">Hurtig</button>
+          <button class="btn-sm" data-speed="fastest">Hurtigst</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-big" id="runBtn">Start</button>
+        <button class="btn-big reset" id="resetBtn">Nulstil</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-big announce" id="announceBtn" disabled>Annoncér baser</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-big compare" id="compareBtn" disabled>Sammenlign udsnit</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="sec-title">Kvantekanal</div>
+      <div class="canvas-wrap">
+        <canvas id="ch"></canvas>
+      </div>
+      <div class="phase-bar" id="phaseBar">
+        <span data-ph="idle" class="active">KLAR</span>
+        <span data-ph="transmit">TRANSMISSION</span>
+        <span data-ph="announce">BASIS-ANNONCERING</span>
+        <span data-ph="compare">FEJLTJEK</span>
+        <span data-ph="done">NØGLE FÆRDIG</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row split-stats">
+    <div class="box">
+      <div class="sec-title">Statistik</div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">Sendte fotoner</div>
+          <div class="stat-val" id="sSent">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Rå nøgle (basis-match)</div>
+          <div class="stat-val" id="sSifted">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Brugt til fejltjek</div>
+          <div class="stat-val" id="sCmp">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Fejlrate</div>
+          <div class="stat-val" id="sQber">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="sec-title">Endelig nøgle</div>
+      <div class="key-display" id="keyDisp">— ingen nøgle endnu —</div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div class="sec-title">Resultater pr. foton</div>
+    <div class="table-wrap">
+      <table id="resultsTbl">
+        <thead>
+          <tr id="thead">
+            <th>#</th>
+            <th>Alice<br>bit</th>
+            <th>Alice<br>basis</th>
+            <th class="eve-col hide">Eva<br>basis</th>
+            <th class="eve-col hide">Eva<br>bit</th>
+            <th>Bob<br>basis</th>
+            <th>Bob<br>bit</th>
+            <th>Match?</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="box explain">
+    <div class="sec-title">Forklaring</div>
+    <p id="phaseDesc">Tryk på <b>Start</b> for at sende fotoner gennem kanalen. Du kan slå Eva til og undersøge hvordan aflytning forstyrrer nøglen.</p>
+    <p id="hint" class="hint" style="display:none"></p>
+    <div class="legend">
+      <div class="legend-item"><span class="basis-plus">+</span> Rektangulær basis (0°/90°)</div>
+      <div class="legend-item"><span class="basis-cross">×</span> Diagonal basis (<span id="crossAngleLbl">-45°/45°</span>)</div>
+      <div class="legend-item"><b>Rå nøgle</b> = bits hvor Alice og Bob valgte samme basis</div>
+      <div class="legend-item"><span class="legend-sw" style="background:rgba(0,255,159,.3);border:1px solid var(--green)"></span> I rå nøgle</div>
+      <div class="legend-item"><span class="legend-sw" style="background:rgba(255,217,61,.3);border:1px solid var(--yellow)"></span> Brugt til fejltjek</div>
+      <div class="legend-item"><span class="legend-sw" style="background:rgba(255,68,102,.3);border:1px solid var(--red)"></span> Aflytning afsløret</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modal: Opgave -->
+<div class="modal-bg hide" id="taskModal">
+  <div class="modal-box" role="dialog" aria-labelledby="taskTitle">
+    <button class="modal-close" id="taskClose" aria-label="Luk">×</button>
+
+    <h1 id="taskTitle">BB84 - kvantenøgledistribution</h1>
+
+    <p>Alice og Bob vil oprette en fælles hemmelig nøgle: en lang række 0'er og 1'er, som de senere kan bruge til kryptering.</p>
+    <p>Alice sender én foton ad gangen. For hver foton vælger hun tilfældigt både en basis og en bitværdi. Bob måler hver foton i sin egen tilfældigt valgte basis — han kender ikke Alices valg på forhånd.</p>
+    <p>Eva sidder på forbindelsen mellem Alice og Bob. Hun forsøger at "aflytte" ved at måle nogle af fotonerne og sende nye fotoner videre til Bob.</p>
+    <p>I denne opgave skal du undersøge den kvantemekaniske protokol <b>BB84</b>, hvor Alice og Bob kan opdage statistiske tegn på aflytning.</p>
+
+    <h2>Hvad er Alice egentlig?</h2>
+    <p>I opgaven beskriver vi Alice som en person, men i praksis er Alice et <b>automatisk apparat</b>. I den idealiserede version af BB84 kan man tænke på apparatet som en kilde, der udsender én foton ad gangen med en bestemt polarisation.</p>
+    <p>Apparatet består grundlæggende af tre dele:</p>
+    <ul>
+      <li>En <b>lyskilde</b>, fx en svag laser, som udsender korte lyspulser. I den idealiserede model omtaler vi dem som enkeltfotoner.</li>
+      <li>En <b>tilfældighedsgenerator</b> (RNG), som producerer tilfældige bits. I moderne kvantekryptografi bruges ofte en kvantetilfældighedsgenerator (QRNG), hvor tilfældigheden stammer fra målinger på kvantemekaniske systemer, fx fotoner.</li>
+      <li>En <b>polarisationsmodulator</b>, som er en optisk komponent der kan dreje polarisationen af en passerende foton til en bestemt vinkel, der svarer til den valgte basis og bitværdi. Den fungerer ikke som et almindeligt polarisationsfilter, der blokerer nogle fotoner og slipper andre igennem.</li>
+    </ul>
+    <p>For hver udsendt foton sker dette automatisk:</p>
+    <ol>
+      <li>Tilfældighedsgeneratoren vælger to tilfældige bits: én for basisvalget og én for polarisationstilstandens bitværdi.</li>
+      <li>Kombinationen af basis og polarisationstilstand oversættes ved hjælp af tabellen nedenfor til en bestemt polarisationsretning.</li>
+      <li>Modulatoren indstiller polarisationen til den valgte værdi.</li>
+      <li>Fotonen sendes gennem den optiske forbindelse til Bob. Denne forbindelse kaldes ofte kvantekanalen, fordi informationen bæres af fotonens kvantetilstand.</li>
+      <li>Alice gemmer basisvalget og bitværdien i apparatets hukommelse. Senere kan hun offentliggøre basisvalget, men ikke bitværdien.</li>
+    </ol>
+
+    <h2>Sådan virker protokollen kort</h2>
+    <p>Før protokollen begynder, aftaler Alice og Bob helt åbent, hvilken polarisationsvinkel der svarer til bit 0 og bit 1 i hver af de to baser. Denne aftale er offentlig og må gerne være kendt af alle, også Eva. I denne simulering bruges:</p>
+    <table>
+      <tr><th>basis</th><th>bit</th><th>polarisationsvinkel</th></tr>
+      <tr><td><code>+</code></td><td>0</td><td>0° (vandret)</td></tr>
+      <tr><td><code>+</code></td><td>1</td><td>90° (lodret)</td></tr>
+      <tr><td><code>×</code></td><td>0</td><td>-45°</td></tr>
+      <tr><td><code>×</code></td><td>1</td><td>+45°</td></tr>
+    </table>
+    <p>Med den aftale på plads kan selve protokollen begynde:</p>
+    <ol>
+      <li><b>Alice</b> sender fotoner til Bob. For hver foton vælger hun tilfældigt en basis (<code>+</code> eller <code>×</code>) og en bitværdi (0 eller 1). Derefter indstiller hun polarisationen efter den aftalte tabel.</li>
+      <li><b>Bob</b> måler hver foton i sin egen tilfældigt valgte basis. Han kender ikke Alices basisvalg på forhånd. Hvis hans basis er den samme som Alices, måler han i den idealiserede model den korrekte bitværdi. Hvis hans basis er forskellig fra Alices, bliver hans resultat tilfældigt.</li>
+      <li>Bagefter offentliggør Alice og Bob deres basisvalg, men ikke deres bitværdier. De beholder kun de positioner, hvor de tilfældigvis valgte samme basis. Disse bits kaldes den <i>rå nøgle</i>.</li>
+      <li>Alice og Bob sammenligner et tilfældigt udsnit af den rå nøgle. De offentliggør bitværdierne i netop dette udsnit og smider derefter disse bits væk.</li>
+      <li>Hvis fejlratens størrelse er forenelig med det forventede støjniveau, kan resten af rånøglen bruges videre. Hvis fejlratens størrelse er for høj, er det et tegn på aflytning eller for meget støj, og nøglen må forkastes.</li>
+    </ol>
+    <p>I en virkelig BB84-protokol er der flere trin efter dette, blandt andet fejlkorrektion og såkaldt <b>privacy amplification</b>, som gør den endelige nøgle kortere, men mere sikker. I denne simulering fokuserer vi på det grundlæggende princip: at en aflytters måling kan afsløres som en forhøjet fejlrate.</p>
+
+    <h2>Del 1 - Uden aflytning</h2>
+    <p>Indstil simuleringen sådan:</p>
+    <ul>
+      <li>Antal fotoner: <b>32</b></li>
+      <li>Eva aflytter: <b>FRA</b></li>
+      <li>Andel af nøglen til fejltjek: <b>25 %</b></li>
+      <li>Tempo: <b>Langsom</b></li>
+    </ul>
+    <p>Tryk <b>Start</b> og se fotonerne krydse kanalen.</p>
+    <div class="op"><b>Opgave 1.1.</b> Når Alice og Bob hver især vælger tilfældigt mellem to baser, hvor stor en andel af fotonerne vil i gennemsnit have <i>samme</i> basis? Argumenter ud fra sandsynlighedsregning.</div>
+    <div class="op"><b>Opgave 1.2.</b> Tryk <b>Annoncér baser</b> og aflæs feltet "Rå nøgle (basis-match)". Hvor mange fotoner havde basis-match? Hvor tæt er det på din forudsigelse i 1.1?</div>
+    <div class="op"><b>Opgave 1.3.</b> Tryk <b>Sammenlign udsnit</b>. Aflæs fejlraten. Hvad er den, og hvad betyder det?</div>
+    <div class="op"><b>Opgave 1.4.</b> Se i resultattabellen på en række, hvor Alice og Bob ikke valgte samme basis. Hvad er sammenhængen mellem Alices bit og Bobs bit? Forklar, hvorfor man ikke kan bruge sådanne rækker til en nøgle.</div>
+
+    <h2>Del 2 - Med aflytning</h2>
+    <p>Slå <b>Eva aflytter</b> TIL. Lad Evas andel være 100 %. Behold N = 32. Tryk <b>Start</b>, og tryk bagefter <b>Annoncér baser</b> og <b>Sammenlign udsnit</b>.</p>
+    <div class="op"><b>Opgave 2.1.</b> Hvad er fejlraten nu? Sammenlign med din observation i 1.3.</div>
+    <div class="op"><b>Opgave 2.2.</b> Kig i resultattabellen. Find en række hvor:
+      <ul>
+        <li>Alice og Bob valgte samme basis, og</li>
+        <li>Eva valgte den anden basis end Alice.</li>
+      </ul>
+      Hvad blev Evas bit? Hvad blev Bobs bit? Stemmer Bobs bit overens med Alices?
+    </div>
+    <div class="op"><b>Opgave 2.3.</b> Find nu en række hvor Alice, Eva og Bob alle valgte samme basis. Hvad blev resultaterne her?</div>
+    <div class="op"><b>Opgave 2.4.</b> Antag, at Eva aflytter hver eneste foton med "intercept-resend"-metoden: Hun måler fotonen i en tilfældig basis og sender derefter en ny foton videre til Bob i den tilstand, hun selv målte. Betragt kun de positioner, hvor Alice og Bob har samme basis, altså den rå nøgle.
+      <p>(a) Hvad er sandsynligheden for, at Eva også har samme basis som Alice?</p>
+      <p>(b) Hvis Eva har en anden basis end Alice, hvad er sandsynligheden så for, at Bob alligevel måler den rigtige bit?</p>
+      <p>(c) Vis ved sandsynlighedsregning, at den forventede fejlrate i den rå nøgle bliver <b>25 %</b>.</p>
+    </div>
+
+    <h2>Del 3 - Statistik og antal fotoner</h2>
+    <p>Sæt N = 16, behold Eva på 100 %, og kør simuleringen.</p>
+    <div class="op"><b>Opgave 3.1.</b> Noter fejlraten. Kør simuleringen igen flere gange ved at klikke <b>Nulstil</b> og derefter <b>Start</b>. Skriv ned, hvad fejlraten bliver for 5 kørsler:
+      <table>
+        <tr><th>Kørsel</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+        <tr><td>Fejlrate</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </table>
+    </div>
+    <div class="op"><b>Opgave 3.2.</b> Skru N op til <b>256</b>. Gentag 5 kørsler. Brug indstillingen <b>Hurtigst</b> for at spare tid.
+      <table>
+        <tr><th>Kørsel</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+        <tr><td>Fejlrate</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </table>
+    </div>
+    <div class="op"><b>Opgave 3.3.</b> Hvorfor svinger fejlraten mere ved små N? Brug gerne binomialfordelingen i forklaringen. Hvorfor er det relevant for protokollens praktiske brug?</div>
+
+    <h2>Del 4 - Delvis aflytning</h2>
+    <p>Behold N = 256, og slå Eva TIL. Variér Evas aflytningsandel.</p>
+    <div class="op"><b>Opgave 4.1.</b> Udfyld tabellen. Brug indstillingen <b>Hurtigst</b> for at spare tid.
+      <table>
+        <tr><th>Evas andel</th><th>100 %</th><th>75 %</th><th>50 %</th><th>25 %</th><th>0 %</th></tr>
+        <tr><td>Fejlrate</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </table>
+    </div>
+    <div class="op"><b>Opgave 4.2.</b> Tegn fejlraten som funktion af Evas aflytningsandel i et koordinatsystem. Hvilken type sammenhæng ser du?</div>
+    <div class="op"><b>Opgave 4.3.</b> Forestil dig, at den naturlige støj i en fiber giver en fejlrate på ca. 3 % selv uden aflytning. I den simple intercept-resend-model giver fuld aflytning ca. 25 % fejl, og delvis aflytning giver omtrent en proportionalt mindre fejlrate. Hvilken aflytningsandel svarer 3 % fejlrate til i denne model? Hvorfor betyder det ikke, at Alice og Bob med sikkerhed kan afgøre i én enkelt måleserie, om fejlene skyldes støj eller aflytning?</div>
+
+    <h2>Del 5 - Andel til fejltjek</h2>
+    <p>Sæt N = 256, og slå Eva TIL med 100 %.</p>
+    <div class="op"><b>Opgave 5.1.</b> Kør simuleringen tre gange med henholdsvis 5 %, 25 % og 50 % af nøglen til fejltjek. Noter:
+      <table>
+        <tr><th>Andel til fejltjek</th><th>5 %</th><th>25 %</th><th>50 %</th></tr>
+        <tr><td>Bits sammenlignet</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><td>Fejlrate</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><td>Bits tilbage i nøgle</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </table>
+    </div>
+    <div class="op"><b>Opgave 5.2.</b> Beskriv afvejningen: Hvad vinder man, og hvad mister man, ved at sammenligne en større andel?</div>
+
+    <h2>Diskussionsspørgsmål</h2>
+    <div class="op"><b>D.1.</b> Eva kunne i princippet forsøge at "kopiere" fotonen, måle den ene kopi og sende den anden videre uændret. Hvis det var muligt, ville BB84 så virke? Hvorfor eller hvorfor ikke?
+      <p>I denne simulering ligger bitinformationen i fotonens polarisation. Forestil jer, at Eva havde et apparat, der kunne lave en perfekt kopi af en ukendt fotons polarisationstilstand. Hun kunne så sende originalen videre til Bob og gemme kopien. Når Alice og Bob senere offentliggør deres basisvalg, kunne Eva måle sin kopi i den rigtige basis.</p>
+      <p>a) Hvis det var muligt, ville BB84 så stadig være sikker? Hvorfor eller hvorfor ikke?</p>
+      <p>b) Et fundamentalt resultat fra kvantemekanikken, <b>no-cloning-teoremet</b>, siger, at en ukendt kvantetilstand ikke kan kopieres perfekt. Hvilken rolle spiller det for protokollens sikkerhed?</p>
+    </div>
+    <div class="op"><b>D.2.</b> I protokollen offentliggør Alice og Bob deres basisvalg over en åben, men autentificeret, klassisk kanal. Hvorfor er det ikke et sikkerhedsproblem? Hvad ville være et problem at offentliggøre?</div>
+    <div class="op"><b>D.3.</b> Konventionstabellen øverst i denne opgave, altså hvilken vinkel der svarer til bit 0 og bit 1, er også offentligt kendt. Eva må gerne kende tabellen. Hvorfor hjælper det ikke Eva nok til at kunne aflytte uden at skabe fejl? Hvad er det helt præcis, hun stadig mangler at vide, før hun kan måle uden at blive afsløret?</div>
+    <div class="op"><b>D.4.</b> Den endelige nøgle bygges af Alices bits i de positioner i den rå nøgle, som ikke blev brugt til fejltjek. Hvorfor smider man de sammenlignede bits væk, selv om de gav fejlraten?</div>
+    <div class="op"><b>D.5.</b> Hele kommunikationen efter fotontransmissionen — både basisannonceringen og sammenligningen af testbits — foregår over en åben klassisk kanal, som Eva godt må lytte med på. Hvorfor er det stadig ikke et sikkerhedsproblem, så længe kanalen er autentificeret? Hvilke bits ender med at være hemmelige, og hvorfor kan Eva ikke regne dem ud fra det, hun har hørt?</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   TILSTAND
+   ============================================================ */
+let isDark = true;
+function D(d, l){ return isDark ? d : l; }
+
+const canvas = document.getElementById('ch');
+const ctx = canvas.getContext('2d');
+
+const state = {
+  phase: 'idle',          // idle | transmitting | transmitted | announced | compared
+  N: 16,
+  eveOn: false,
+  eveFrac: 1.0,
+  variableAngle: false,
+  thetaDeg: 45,           // basisvinkel θ mellem + og × (grader). Normal mode = 45.
+  cmpFrac: 0.25,
+  speed: 'slow',          // step | slow | fast | instant
+  rows: [],
+  currentIdx: -1,
+  revealedCount: 0,       // how many rows are "done" and visible in table
+  comparedIndices: new Set(),
+  animation: null,
+  playing: false,
+  awaitingStep: false,
+};
+
+/* ============================================================
+   FYSIK
+   ============================================================ */
+// Basis: 0 = + (rektangulær), 1 = × (diagonal)
+// Polariseringsvinkel (grader, 0 = horisontal, voksende mod uret):
+//   basis 0, bit 0:  0°           basis 0, bit 1: 90°
+//   basis 1, bit 0:  θ-90°        basis 1, bit 1: θ°
+// θ = state.thetaDeg = basisvinklen mellem + og ×. Normal mode: θ = 45°,
+// hvilket giver -45°/45° som i standard-BB84.
+function polAngle(basis, bit){
+  if (basis === 0) return bit === 0 ? 0 : 90;
+  const a0 = state.thetaDeg - 90;
+  return bit === 0 ? a0 : a0 + 90;
+}
+function basisSym(b){ return b === 0 ? '+' : '×'; }
+function basisCls(b){ return b === 0 ? 'basis-plus' : 'basis-cross'; }
+
+// Måling via Born's regel (Malus' lov): P(måler bit b) = cos²(vinkelforskel
+// mellem den forberedte polarisation og b's måleakse). Ved samme basis er
+// vinkelforskellen altid 0° eller 90°, så resultatet er deterministisk —
+// motoren reducerer da automatisk til den simple same/different-basis-model.
+// Ved θ = 45° (normal mode) giver forskellig basis altid præcis 50/50, som i
+// den oprindelige model.
+function measureBit(prepBasis, prepBit, measBasis){
+  if (prepBasis === measBasis) return { bit: prepBit, random: false };
+  const prepAngle = polAngle(prepBasis, prepBit);
+  const axis0 = polAngle(measBasis, 0);
+  const p0 = Math.cos((prepAngle - axis0) * Math.PI / 180) ** 2;
+  return { bit: Math.random() < p0 ? 0 : 1, random: true };
+}
+
+function generateAllRows(){
+  state.rows = [];
+  for (let i = 0; i < state.N; i++){
+    const aliceBasis = Math.random() < 0.5 ? 0 : 1;
+    const aliceBit   = Math.random() < 0.5 ? 0 : 1;
+
+    let intercepted = false;
+    let eveBasis = null, eveBit = null, eveRandom = false;
+    let txBasis = aliceBasis, txBit = aliceBit;
+
+    if (state.eveOn && Math.random() < state.eveFrac){
+      intercepted = true;
+      eveBasis = Math.random() < 0.5 ? 0 : 1;
+      const m = measureBit(aliceBasis, aliceBit, eveBasis);
+      eveBit = m.bit;
+      eveRandom = m.random;
+      txBasis = eveBasis;
+      txBit   = eveBit;
+    }
+
+    const bobBasis = Math.random() < 0.5 ? 0 : 1;
+    const bm = measureBit(txBasis, txBit, bobBasis);
+
+    state.rows.push({
+      aliceBasis, aliceBit,
+      intercepted, eveBasis, eveBit, eveRandom,
+      bobBasis, bobBit: bm.bit, bobRandom: bm.random,
+      txBasis, txBit
+    });
+  }
+}
+
+/* ============================================================
+   UI-REFERENCER
+   ============================================================ */
+const el = {
+  nSlider:       document.getElementById('nSlider'),
+  nVal:          document.getElementById('nVal'),
+  eveTgl:        document.getElementById('eveTgl'),
+  eveLbl:        document.getElementById('eveLbl'),
+  eveFracCtrl:   document.getElementById('eveFracCtrl'),
+  eveFracSlider: document.getElementById('eveFracSlider'),
+  eveFracVal:    document.getElementById('eveFracVal'),
+  angleTgl:      document.getElementById('angleTgl'),
+  angleLbl:      document.getElementById('angleLbl'),
+  angleCtrl:     document.getElementById('angleCtrl'),
+  angleSlider:   document.getElementById('angleSlider'),
+  angleVal:      document.getElementById('angleVal'),
+  crossAngleLbl: document.getElementById('crossAngleLbl'),
+  cmpSlider:     document.getElementById('cmpSlider'),
+  cmpVal:        document.getElementById('cmpVal'),
+  speedGrp:      document.getElementById('speedGrp'),
+  runBtn:        document.getElementById('runBtn'),
+  resetBtn:      document.getElementById('resetBtn'),
+  announceBtn:   document.getElementById('announceBtn'),
+  compareBtn:    document.getElementById('compareBtn'),
+  themeBtn:      document.getElementById('themeBtn'),
+  tbody:         document.getElementById('tbody'),
+  phaseBar:      document.getElementById('phaseBar'),
+  phaseDesc:     document.getElementById('phaseDesc'),
+  hint:          document.getElementById('hint'),
+  sSent:         document.getElementById('sSent'),
+  sSifted:       document.getElementById('sSifted'),
+  sCmp:          document.getElementById('sCmp'),
+  sQber:         document.getElementById('sQber'),
+  keyDisp:       document.getElementById('keyDisp'),
+};
+
+/* ============================================================
+   UI-OPDATERING
+   ============================================================ */
+function updatePhase(){
+  document.querySelectorAll('#phaseBar span').forEach(s => s.classList.remove('active'));
+  const phaseMap = {
+    'idle':'idle', 'transmitting':'transmit', 'transmitted':'transmit',
+    'announced':'announce', 'compared':'done'
+  };
+  const ph = phaseMap[state.phase] || 'idle';
+  const target = document.querySelector('#phaseBar span[data-ph="'+ph+'"]');
+  if (target) target.classList.add('active');
+  // Also light up "compare" between announced and compared
+  if (state.phase === 'announced'){
+    document.querySelector('#phaseBar span[data-ph="compare"]').classList.add('active');
+  }
+
+  el.announceBtn.disabled = state.phase !== 'transmitted';
+  el.compareBtn.disabled  = state.phase !== 'announced';
+
+  if (state.phase === 'idle')                    el.runBtn.textContent = 'Start';
+  else if (state.phase === 'transmitting' && state.speed === 'step' && state.awaitingStep) el.runBtn.textContent = 'Næste foton';
+  else if (state.phase === 'transmitting' && state.playing) el.runBtn.textContent = 'Pause';
+  else if (state.phase === 'transmitting')       el.runBtn.textContent = 'Fortsæt';
+  else                                            el.runBtn.textContent = 'Start';
+  el.runBtn.disabled = (state.phase !== 'idle' && state.phase !== 'transmitting');
+
+  const showEve = state.eveOn;
+  document.querySelectorAll('.eve-col').forEach(c => c.classList.toggle('hide', !showEve));
+
+  setPhaseDescription();
+}
+
+function setPhaseDescription(){
+  let msg = '';
+  if (state.phase === 'idle'){
+    msg = 'Alice og Bob vil oprette en hemmelig nøgle. Alice forbereder fotoner med <i>tilfældig basis</i> og <i>tilfældig bit</i>. Bob måler med sin egen <i>tilfældige basis</i> — han kender ikke Alices valg.';
+    if (state.eveOn) msg += ' <b style="color:var(--red)">Eva</b> sidder på linjen og aflytter. Kan I afsløre hende?';
+  } else if (state.phase === 'transmitting'){
+    msg = 'Fotoner sendes én ad gangen. For hver foton: Alice trækker en tilfældig basis og bit, koder polarisationen og sender. Bob trækker en tilfældig basis og måler. Hvis baserne <i>ikke</i> stemmer, bliver Bobs bit tilfældig.';
+    if (state.eveOn) msg += ' Eva stopper fotonen midtvejs, måler i en tilfældig basis og sender en ny foton videre.';
+  } else if (state.phase === 'transmitted'){
+    msg = 'Alle fotoner er sendt. Næste skridt: Alice og Bob <b>annoncerer deres baser</b> over en offentlig kanal og beholder kun de fotoner hvor de tilfældigvis valgte samme basis. Tryk på <b>Annoncér baser</b>.';
+  } else if (state.phase === 'announced'){
+    const sifted = state.rows.filter(r => r.aliceBasis === r.bobBasis).length;
+    msg = `Basis-match: <b>${sifted}</b> ud af ${state.N} fotoner. Disse bits udgør den <b>rå nøgle</b>. For at tjekke om nogen har aflyttet, sammenligner Alice og Bob et tilfældigt udsnit. Tryk på <b>Sammenlign udsnit</b>.`;
+  } else if (state.phase === 'compared'){
+    const cmpRows = [...state.comparedIndices].map(i => state.rows[i]);
+    const errs = cmpRows.filter(r => r.aliceBit !== r.bobBit).length;
+    const qber = cmpRows.length ? errs / cmpRows.length : 0;
+    if (cmpRows.length === 0){
+      msg = 'Der var ingen bits i den rå nøgle at sammenligne. Send flere fotoner eller prøv igen.';
+    } else if (errs === 0){
+      msg = `Ingen fejl fundet i ${cmpRows.length} sammenlignede bits. Linjen er sandsynligvis sikker. De resterende bits i den rå nøgle udgør den endelige nøgle.`;
+    } else if (qber < 0.10){
+      msg = `Fejlrate <b>${(qber*100).toFixed(1).replace('.',',')} %</b> ud af ${cmpRows.length} sammenlignede bits. En lav fejlrate kan skyldes støj — eller delvis aflytning. Send flere fotoner for en mere pålidelig estimering.`;
+    } else {
+      msg = `Fejlrate: <b style="color:var(--red)">${(qber*100).toFixed(1).replace('.',',')} %</b>. Det er langt over det forventede støjniveau og er derfor et tydeligt tegn på aflytning.`;
+    }
+  }
+  el.phaseDesc.innerHTML = msg;
+  updateHint();
+}
+
+function updateHint(){
+  const hints = [];
+  if (state.eveOn){
+    hints.push('Hvis Eva "aflytter", vil hun i gennemsnit skabe fejl i ca. 25 % af de bits, hvor Alice og Bob har valgt samme basis. Hvis hun kun aflytter en del af fotonerne, bliver den forventede fejlrate tilsvarende mindre: ca. 12,5 % ved 50 % aflytning og ca. 6 % ved 25 % aflytning.<br><br>Fejlraten kan derfor bruges som et statistisk tegn på aflytning — og i denne simple model også til at anslå, hvor stor en del af signalet Eva har forstyrret.');
+  }
+  if (state.phase === 'compared'){
+    const cmpN = state.comparedIndices.size;
+    if (cmpN > 0 && cmpN < 10){
+      hints.push(`<b>Bemærk:</b> kun ${cmpN} bits blev sammenlignet — for få til pålidelig estimering af fejlraten. Skru antallet af fotoner eller andelen til fejltjek op for bedre statistik.`);
+    }
+    const cmpRows = [...state.comparedIndices].map(i => state.rows[i]);
+    const errs = cmpRows.filter(r => r.aliceBit !== r.bobBit).length;
+    const qber = cmpRows.length ? errs / cmpRows.length : 0;
+    if (cmpRows.length > 0 && qber >= 0.10){
+      hints.push('Ved fuld "aflytning" forventer man teoretisk en fejlrate på ca. 25 % i rånøglen. Grunden er, at Eva i halvdelen af tilfældene vælger en anden basis end Alice og Bob. Når det sker, forstyrrer hendes måling fotonens tilstand, og Bob har derefter 50 % sandsynlighed for at få en forkert bitværdi.');
+    }
+  }
+  if (hints.length === 0){
+    el.hint.style.display = 'none';
+    el.hint.innerHTML = '';
+  } else {
+    el.hint.style.display = '';
+    el.hint.innerHTML = hints.join('<br><br>');
+  }
+}
+
+function updateCrossLabel(){
+  const a0 = state.thetaDeg - 90;
+  el.crossAngleLbl.textContent = a0 + '°/' + state.thetaDeg + '°';
+}
+
+function updateStats(){
+  if (state.phase === 'idle')          el.sSent.textContent = '0';
+  else if (state.phase === 'transmitting') el.sSent.textContent = String(state.revealedCount);
+  else                                  el.sSent.textContent = String(state.N);
+
+  if (state.phase === 'announced' || state.phase === 'compared'){
+    const sifted = state.rows.filter(r => r.aliceBasis === r.bobBasis).length;
+    el.sSifted.textContent = String(sifted);
+  } else el.sSifted.textContent = '—';
+
+  if (state.phase === 'compared'){
+    const cmpRows = [...state.comparedIndices].map(i => state.rows[i]);
+    const errs = cmpRows.filter(r => r.aliceBit !== r.bobBit).length;
+    const qber = cmpRows.length ? errs / cmpRows.length : 0;
+    el.sCmp.textContent = String(cmpRows.length);
+    el.sQber.textContent = cmpRows.length
+      ? (qber*100).toFixed(1).replace('.', ',') + ' %'
+      : '—';
+    el.sQber.className = 'stat-val ' + (qber === 0 ? 'qber-zero' : qber < 0.10 ? 'qber-low' : 'qber-high');
+
+    // Final key = Alice's bits in sifted positions NOT used for comparison
+    const keyBits = [];
+    state.rows.forEach((r, i) => {
+      if (r.aliceBasis === r.bobBasis && !state.comparedIndices.has(i)){
+        keyBits.push(r.aliceBit);
+      }
+    });
+    el.keyDisp.textContent = keyBits.length ? keyBits.join('') : '(ingen bits tilbage til nøgle)';
+  } else {
+    el.sCmp.textContent = '—';
+    el.sQber.textContent = '—';
+    el.sQber.className = 'stat-val';
+    el.keyDisp.textContent = '— ingen nøgle endnu —';
+  }
+}
+
+function renderTable(){
+  const showEve = state.eveOn;
+  const lines = [];
+  const maxVis = state.phase === 'transmitting' ? state.revealedCount : state.rows.length;
+  const showStatus = (state.phase === 'announced' || state.phase === 'compared');
+
+  for (let i = 0; i < maxVis; i++){
+    const r = state.rows[i];
+    const match = r.aliceBasis === r.bobBasis;
+    let status = '', statusCls = '';
+    if (!showStatus){
+      status = '<span class="muted">—</span>';
+    } else {
+      if (!match){
+        status = 'Forkastet';
+        statusCls = 'status-discard';
+      } else if (state.phase === 'compared' && state.comparedIndices.has(i)){
+        if (r.aliceBit === r.bobBit){
+          status = 'Sammenlignet ✓';
+          statusCls = 'status-compared';
+        } else {
+          status = 'Sammenlignet ✗';
+          statusCls = 'status-compared-err';
+        }
+      } else if (state.phase === 'compared'){
+        status = 'I nøglen';
+        statusCls = 'status-key';
+      } else {
+        status = 'I rå nøgle';
+        statusCls = 'status-key';
+      }
+    }
+
+    const aliceBasisDisp = `<span class="${basisCls(r.aliceBasis)}">${basisSym(r.aliceBasis)}</span>`;
+    const bobBasisDisp   = `<span class="${basisCls(r.bobBasis)}">${basisSym(r.bobBasis)}</span>`;
+    const aliceBitDisp   = `<span class="bit-${r.aliceBit}">${r.aliceBit}</span>`;
+    const bobBitDisp     = `<span class="bit-${r.bobBit}">${r.bobBit}</span>`;
+    const matchDisp = showStatus
+      ? (match ? '<span style="color:var(--green);font-weight:700">✓</span>'
+              : '<span class="muted">—</span>')
+      : '<span class="muted">?</span>';
+
+    let eveCells = '';
+    if (showEve){
+      if (r.intercepted){
+        eveCells = `<td><span class="${basisCls(r.eveBasis)}">${basisSym(r.eveBasis)}</span></td>`
+                 + `<td><span class="bit-${r.eveBit}">${r.eveBit}</span></td>`;
+      } else {
+        eveCells = `<td><span class="muted">—</span></td><td><span class="muted">—</span></td>`;
+      }
+    }
+
+    lines.push(
+      `<tr class="${statusCls}">`+
+      `<td>${i+1}</td>`+
+      `<td>${aliceBitDisp}</td>`+
+      `<td>${aliceBasisDisp}</td>`+
+      eveCells+
+      `<td>${bobBasisDisp}</td>`+
+      `<td>${bobBitDisp}</td>`+
+      `<td>${matchDisp}</td>`+
+      `<td>${status}</td>`+
+      `</tr>`
+    );
+  }
+  el.tbody.innerHTML = lines.join('');
+}
+
+/* ============================================================
+   KANVAS-TEGNING
+   ============================================================ */
+function fitCanvas(){
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  canvas.width  = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawChannel();
+}
+
+function stationPositions(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  return {
+    w, h,
+    aliceX: 70,
+    bobX:   w - 70,
+    eveX:   w / 2,
+    y:      h / 2
+  };
+}
+
+function drawChannel(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const c = ctx;
+  c.fillStyle = D('#060e18', '#f4eee3');
+  c.fillRect(0, 0, w, h);
+
+  const sp = stationPositions();
+
+  // Dashed channel line
+  c.strokeStyle = D('#3a6a88', '#888');
+  c.lineWidth = 1.5;
+  c.setLineDash([6, 5]);
+  c.beginPath();
+  c.moveTo(sp.aliceX + 34, sp.y);
+  c.lineTo(sp.bobX   - 34, sp.y);
+  c.stroke();
+  c.setLineDash([]);
+
+  drawStation(c, sp.aliceX, sp.y, 'Alice', D('#00cfff','#1f5e9d'),
+              getStationData('alice'));
+  if (state.eveOn){
+    drawStation(c, sp.eveX, sp.y, 'Eva',   D('#ff4466','#c0306a'),
+                getStationData('eve'));
+  }
+  drawStation(c, sp.bobX, sp.y, 'Bob',     D('#00ff9f','#0e6a4f'),
+              getStationData('bob'));
+
+  // Photon in flight
+  if (state.animation && state.animation.photon){
+    const p = state.animation.photon;
+    drawPhoton(c, p.x, p.y, p.angle);
+  }
+
+  // Measurement spark
+  if (state.animation && state.animation.spark){
+    drawSpark(c, state.animation.spark.x, state.animation.spark.y, state.animation.spark.t);
+  }
+
+  // Counter
+  if (state.phase !== 'idle' && state.rows.length){
+    c.fillStyle = D('#bfe2ef', '#222');
+    c.font = 'bold 12px "Courier New", monospace';
+    c.textAlign = 'right';
+    const cur = Math.max(0, Math.min(state.currentIdx + 1, state.N));
+    c.fillText(`Foton ${cur} / ${state.N}`, w - 10, h - 10);
+    c.textAlign = 'left';
+  }
+}
+
+function getStationData(who){
+  if (state.currentIdx < 0 || state.currentIdx >= state.rows.length) return null;
+  if (!state.animation) return null;
+  const r = state.rows[state.currentIdx];
+  const sub = state.animation.sub;
+
+  if (who === 'alice'){
+    // Vis Alice's klargjorte foton fra prepare og fremad, indtil animation er done
+    if (sub === 'prepare' || sub === 'travel1' || sub === 'eveMeas' ||
+        sub === 'travel2' || sub === 'bobMeas') {
+      return { basis: r.aliceBasis, bit: r.aliceBit };
+    }
+    return null;
+  }
+  if (who === 'eve'){
+    if (!r.intercepted) return null;
+    if (sub === 'eveMeas' || sub === 'travel2' || sub === 'bobMeas'){
+      return { basis: r.eveBasis, bit: r.eveBit };
+    }
+    return null;
+  }
+  if (who === 'bob'){
+    if (sub === 'bobMeas') {
+      return { basis: r.bobBasis, bit: r.bobBit };
+    }
+    return null;
+  }
+  return null;
+}
+
+function drawStation(c, x, y, label, color, data){
+  const bw = 84, bh = 100;
+  // box
+  c.fillStyle   = D('#0a1622', '#fdfaf4');
+  c.strokeStyle = color;
+  c.lineWidth = 2;
+  if (c.roundRect){
+    c.beginPath(); c.roundRect(x - bw/2, y - bh/2, bw, bh, 6);
+    c.fill(); c.stroke();
+  } else {
+    c.fillRect(x - bw/2, y - bh/2, bw, bh);
+    c.strokeRect(x - bw/2, y - bh/2, bw, bh);
+  }
+
+  // label
+  c.fillStyle = color;
+  c.font = 'bold 13px "Courier New", monospace';
+  c.textAlign = 'center';
+  c.fillText(label, x, y - bh/2 + 16);
+
+  if (data){
+    // polarization indicator + basis filter ghost
+    drawBasisFrame(c, x, y + 4, data.basis, color);
+    drawPolarization(c, x, y + 4, polAngle(data.basis, data.bit), color);
+
+    c.fillStyle = D('#d0eef5', '#1a1a1a');
+    c.font = 'bold 11px "Courier New", monospace';
+    c.fillText(`${basisSym(data.basis)}  bit ${data.bit}`, x, y + bh/2 - 8);
+  } else {
+    c.fillStyle = D('#5a7a90', '#888');
+    c.font = '12px "Courier New", monospace';
+    c.fillText('—', x, y + 6);
+  }
+}
+
+// Ghost-tegning af basis-rammen (krydsede linjer) for at gøre basis tydelig
+function drawBasisFrame(c, x, y, basis, color){
+  c.save();
+  c.strokeStyle = color;
+  c.globalAlpha = 0.22;
+  c.lineWidth = 1.5;
+  const r = 22;
+  if (basis === 0){
+    c.beginPath();
+    c.moveTo(x - r, y);     c.lineTo(x + r, y);
+    c.moveTo(x, y - r);     c.lineTo(x, y + r);
+    c.stroke();
+  } else {
+    c.beginPath();
+    const s = r * Math.SQRT1_2;
+    c.moveTo(x - s, y - s); c.lineTo(x + s, y + s);
+    c.moveTo(x - s, y + s); c.lineTo(x + s, y - s);
+    c.stroke();
+  }
+  c.restore();
+}
+
+function drawPolarization(c, x, y, angleDeg, color){
+  const len = 17;
+  const a = -angleDeg * Math.PI / 180;
+  const dx = Math.cos(a) * len;
+  const dy = Math.sin(a) * len;
+
+  c.strokeStyle = color || D('#00cfff', '#378ADD');
+  c.lineWidth = 3.2;
+  c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(x - dx, y - dy);
+  c.lineTo(x + dx, y + dy);
+  c.stroke();
+
+  // Små pile på begge ender for at markere at det er en akse
+  const ar = 5, ah = Math.PI / 6;
+  for (const sign of [1, -1]){
+    const ex = x + sign * dx, ey = y + sign * dy;
+    c.beginPath();
+    c.moveTo(ex, ey);
+    c.lineTo(ex - sign * ar * Math.cos(a - ah), ey - sign * ar * Math.sin(a - ah));
+    c.moveTo(ex, ey);
+    c.lineTo(ex - sign * ar * Math.cos(a + ah), ey - sign * ar * Math.sin(a + ah));
+    c.stroke();
+  }
+}
+
+function drawPhoton(c, x, y, angleDeg){
+  // Glow
+  const grad = c.createRadialGradient(x, y, 0, x, y, 20);
+  grad.addColorStop(0, D('rgba(255,255,255,0.55)', 'rgba(55,138,221,0.45)'));
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  c.fillStyle = grad;
+  c.beginPath(); c.arc(x, y, 20, 0, Math.PI*2); c.fill();
+
+  // Photon dot
+  c.fillStyle = D('#ffffff', '#1a1a1a');
+  c.beginPath(); c.arc(x, y, 3.5, 0, Math.PI*2); c.fill();
+
+  // Polarization axis through it
+  drawPolarization(c, x, y, angleDeg, D('#ffffff', '#1a1a1a'));
+}
+
+function drawSpark(c, x, y, t){
+  const alpha = 1 - t;
+  const r1 = 6 + t * 20;
+  c.save();
+  c.globalAlpha = alpha;
+  c.strokeStyle = D('#ffd93d', '#c07800');
+  c.lineWidth = 2;
+  for (let i = 0; i < 8; i++){
+    const a = (i / 8) * Math.PI * 2;
+    c.beginPath();
+    c.moveTo(x + Math.cos(a) * 5, y + Math.sin(a) * 5);
+    c.lineTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1);
+    c.stroke();
+  }
+  c.restore();
+}
+
+/* ============================================================
+   ANIMATION
+   ============================================================ */
+let animFrame = null;
+
+function startTransmission(){
+  generateAllRows();
+  state.phase = 'transmitting';
+  state.currentIdx = -1;
+  state.revealedCount = 0;
+  state.comparedIndices.clear();
+  updatePhase();
+  updateStats();
+  renderTable();
+
+  state.playing = true;
+  nextPhoton();
+}
+
+function nextPhoton(){
+  if (state.currentIdx >= state.N - 1){
+    finishTransmission();
+    return;
+  }
+
+  state.currentIdx++;
+  state.awaitingStep = false;
+
+  const r = state.rows[state.currentIdx];
+  const sp = stationPositions();
+
+  const seq = [];
+  seq.push({ sub:'prepare', dur: 250 });
+
+  if (state.eveOn && r.intercepted){
+    seq.push({ sub:'travel1', dur: 600,
+      from:{x:sp.aliceX+30, y:sp.y, angle: polAngle(r.aliceBasis, r.aliceBit)},
+      to:  {x:sp.eveX-32,   y:sp.y, angle: polAngle(r.aliceBasis, r.aliceBit)} });
+    seq.push({ sub:'eveMeas', dur: 380, spark: r.eveRandom });
+    seq.push({ sub:'travel2', dur: 600,
+      from:{x:sp.eveX+32, y:sp.y, angle: polAngle(r.eveBasis, r.eveBit)},
+      to:  {x:sp.bobX-30, y:sp.y, angle: polAngle(r.eveBasis, r.eveBit)} });
+  } else {
+    seq.push({ sub:'travel1', dur: 1100,
+      from:{x:sp.aliceX+30, y:sp.y, angle: polAngle(r.aliceBasis, r.aliceBit)},
+      to:  {x:sp.bobX-30,   y:sp.y, angle: polAngle(r.aliceBasis, r.aliceBit)} });
+  }
+  seq.push({ sub:'bobMeas', dur: 380, spark: r.bobRandom });
+  seq.push({ sub:'done', dur: 120 });
+
+  let speedMul, minDur;
+  if (state.speed === 'fastest')      { speedMul = 0.05; minDur = 25; }
+  else if (state.speed === 'fast')    { speedMul = 0.22; minDur = 40; }
+  else                                 { speedMul = 1.0;  minDur = 40; }
+  seq.forEach(s => s.dur = Math.max(minDur, s.dur * speedMul));
+
+  state.animation = {
+    seq, idx: 0, startTime: performance.now(),
+    sub: seq[0].sub, photon: null, spark: null
+  };
+  state.playing = true;
+  if (!animFrame) animFrame = requestAnimationFrame(animTick);
+
+  updatePhase();
+}
+
+function finishTransmission(){
+  state.phase = 'transmitted';
+  state.playing = false;
+  state.animation = null;
+  state.revealedCount = state.N;
+  updatePhase();
+  updateStats();
+  renderTable();
+  drawChannel();
+}
+
+function animTick(now){
+  animFrame = null;
+  if (!state.animation || !state.playing){
+    drawChannel();
+    return;
+  }
+  const a = state.animation;
+  const cur = a.seq[a.idx];
+  const elapsed = now - a.startTime;
+  const t = Math.min(1, elapsed / cur.dur);
+
+  if (cur.sub === 'travel1' || cur.sub === 'travel2'){
+    a.photon = {
+      x: cur.from.x + (cur.to.x - cur.from.x) * t,
+      y: cur.from.y + (cur.to.y - cur.from.y) * t,
+      angle: cur.from.angle
+    };
+    a.spark = null;
+  } else if (cur.sub === 'eveMeas' || cur.sub === 'bobMeas'){
+    a.photon = null;
+    if (cur.spark){
+      const sp = stationPositions();
+      const sx = cur.sub === 'eveMeas' ? sp.eveX : sp.bobX;
+      a.spark = { x: sx, y: sp.y, t };
+    } else {
+      a.spark = null;
+    }
+  } else {
+    a.photon = null;
+    a.spark = null;
+  }
+
+  a.sub = cur.sub;
+  drawChannel();
+
+  if (t >= 1){
+    // Sub-phase complete
+    if (cur.sub === 'bobMeas'){
+      // Reveal row now
+      state.revealedCount = state.currentIdx + 1;
+      renderTable();
+      updateStats();
+    }
+    a.idx++;
+    if (a.idx >= a.seq.length){
+      state.animation = null;
+      if (state.speed === 'step'){
+        state.awaitingStep = true;
+        state.playing = false;
+        updatePhase();
+        drawChannel();
+        return;
+      }
+      if (state.currentIdx < state.N - 1){
+        nextPhoton();
+      } else {
+        finishTransmission();
+      }
+      return;
+    }
+    a.startTime = now;
+    a.sub = a.seq[a.idx].sub;
+  }
+  if (state.playing){
+    animFrame = requestAnimationFrame(animTick);
+  }
+}
+
+/* ============================================================
+   FASER: ANNONCERING OG SAMMENLIGNING
+   ============================================================ */
+function announceBases(){
+  if (state.phase !== 'transmitted') return;
+  state.phase = 'announced';
+  updatePhase();
+  updateStats();
+  renderTable();
+  drawChannel();
+}
+
+function compareSubset(){
+  if (state.phase !== 'announced' && state.phase !== 'compared') return;
+  const siftedIdx = [];
+  state.rows.forEach((r, i) => {
+    if (r.aliceBasis === r.bobBasis) siftedIdx.push(i);
+  });
+  state.comparedIndices.clear();
+  if (siftedIdx.length > 0){
+    // Fisher-Yates shuffle
+    const shuf = siftedIdx.slice();
+    for (let i = shuf.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [shuf[i], shuf[j]] = [shuf[j], shuf[i]];
+    }
+    const nCmp = Math.max(1, Math.round(siftedIdx.length * state.cmpFrac));
+    state.comparedIndices = new Set(shuf.slice(0, nCmp));
+  }
+  state.phase = 'compared';
+  updatePhase();
+  updateStats();
+  renderTable();
+}
+
+function resetAll(){
+  state.phase = 'idle';
+  state.rows = [];
+  state.currentIdx = -1;
+  state.revealedCount = 0;
+  state.comparedIndices.clear();
+  state.animation = null;
+  state.playing = false;
+  state.awaitingStep = false;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  animFrame = null;
+  updatePhase();
+  updateStats();
+  renderTable();
+  drawChannel();
+}
+
+/* ============================================================
+   EVENT-LYTTERE
+   ============================================================ */
+el.nSlider.addEventListener('input', () => {
+  state.N = parseInt(el.nSlider.value);
+  el.nVal.textContent = state.N;
+  if (state.phase !== 'idle') resetAll();
+});
+
+el.eveTgl.addEventListener('click', () => {
+  state.eveOn = !state.eveOn;
+  el.eveTgl.classList.toggle('on', state.eveOn);
+  el.eveLbl.textContent = state.eveOn ? 'TIL' : 'FRA';
+  el.eveLbl.style.color = state.eveOn ? 'var(--red)' : 'var(--dim)';
+  el.eveFracCtrl.style.display = state.eveOn ? '' : 'none';
+  if (state.phase !== 'idle') resetAll();
+  else { updatePhase(); drawChannel(); }
+});
+
+el.eveFracSlider.addEventListener('input', () => {
+  const v = parseInt(el.eveFracSlider.value);
+  state.eveFrac = v / 100;
+  el.eveFracVal.textContent = v + ' %';
+  if (state.phase !== 'idle') resetAll();
+});
+
+el.angleTgl.addEventListener('click', () => {
+  state.variableAngle = !state.variableAngle;
+  el.angleTgl.classList.toggle('on', state.variableAngle);
+  el.angleLbl.textContent = state.variableAngle ? 'TIL' : 'FRA';
+  el.angleLbl.style.color = state.variableAngle ? 'var(--yellow)' : 'var(--dim)';
+  el.angleCtrl.style.display = state.variableAngle ? '' : 'none';
+  if (!state.variableAngle){
+    // Tilbage til normal mode: lås θ til 45°
+    state.thetaDeg = 45;
+    el.angleSlider.value = 45;
+    el.angleVal.textContent = '45°';
+  }
+  updateCrossLabel();
+  if (state.phase !== 'idle') resetAll();
+  else { updatePhase(); drawChannel(); }
+});
+
+el.angleSlider.addEventListener('input', () => {
+  state.thetaDeg = parseInt(el.angleSlider.value);
+  el.angleVal.textContent = state.thetaDeg + '°';
+  updateCrossLabel();
+  if (state.phase !== 'idle') resetAll();
+});
+
+el.cmpSlider.addEventListener('input', () => {
+  const v = parseInt(el.cmpSlider.value);
+  state.cmpFrac = v / 100;
+  el.cmpVal.textContent = v + ' %';
+  if (state.phase === 'compared'){
+    compareSubset();
+  }
+});
+
+el.speedGrp.querySelectorAll('button').forEach(b => {
+  b.addEventListener('click', () => {
+    el.speedGrp.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.speed = b.dataset.speed;
+  });
+});
+
+el.runBtn.addEventListener('click', () => {
+  if (state.phase === 'idle'){
+    startTransmission();
+  } else if (state.phase === 'transmitting'){
+    if (state.speed === 'step' && state.awaitingStep){
+      state.playing = true;
+      nextPhoton();
+    } else if (state.playing){
+      // pause
+      state.playing = false;
+      if (animFrame) cancelAnimationFrame(animFrame);
+      animFrame = null;
+      updatePhase();
+    } else {
+      // resume
+      state.playing = true;
+      if (state.animation){
+        state.animation.startTime = performance.now() - 1;
+        animFrame = requestAnimationFrame(animTick);
+      } else {
+        nextPhoton();
+      }
+      updatePhase();
+    }
+  }
+});
+
+el.announceBtn.addEventListener('click', announceBases);
+el.compareBtn.addEventListener('click',  compareSubset);
+el.resetBtn.addEventListener('click',    resetAll);
+
+el.themeBtn.addEventListener('click', () => {
+  isDark = !isDark;
+  if (isDark) document.documentElement.removeAttribute('data-theme');
+  else        document.documentElement.setAttribute('data-theme', 'light');
+  el.themeBtn.textContent = isDark ? 'Lyst tema' : 'Mørkt tema';
+  drawChannel();
+});
+
+document.getElementById('copyBtn').addEventListener('click', (e) => {
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const btn = e.currentTarget;
+  const original = btn.textContent;
+  navigator.clipboard.writeText(html).then(() => {
+    btn.textContent = 'Kopieret!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(() => {
+    btn.textContent = 'Fejl';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+});
+
+// Elevopgave-modal
+const taskModal = document.getElementById('taskModal');
+const taskBtn   = document.getElementById('taskBtn');
+const taskClose = document.getElementById('taskClose');
+function openTask(){ taskModal.classList.remove('hide'); taskModal.scrollTop = 0; }
+function closeTask(){ taskModal.classList.add('hide'); }
+taskBtn.addEventListener('click', openTask);
+taskClose.addEventListener('click', closeTask);
+taskModal.addEventListener('click', (e) => { if (e.target === taskModal) closeTask(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !taskModal.classList.contains('hide')) closeTask();
+});
+
+window.addEventListener('resize', () => { fitCanvas(); });
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function init(){
+  fitCanvas();
+  updateCrossLabel();
+  updatePhase();
+  updateStats();
+  renderTable();
+}
+init();
+</script>
+</body>
+</html>
