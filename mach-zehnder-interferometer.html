@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mach-Zehnder-interferometer — Enkeltfoton-interferens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#030810; --bg1:#060e18; --bg2:#0a1622; --bg3:#0f1e2d;
+  --border:#1a3a52;
+  --green:#00ff9f; --cyan:#00cfff; --yellow:#ffd93d; --red:#ff4466;
+  --text:#d0eef5; --dim:#8ec8d8;
+  --font:'Courier New','Lucida Console',monospace;
+  --tr:0.15s ease;
+  --d0:#00cfff; --d1:#00ff9f; --hv:#ff4466;
+  --ghost-core:rgba(230,240,255,0.72); --ghost-mid:rgba(200,222,255,0.34); --ghost-faint:rgba(180,210,255,0.12);
+  --photon:#ff5a5a;
+}
+[data-theme="light"]{
+  --bg0:#e8e0d2; --bg1:#f4eee3; --bg2:#fdfaf4; --bg3:#fdfaf4;
+  --border:#d6cbb8;
+  --green:#1D9E75; --cyan:#378ADD; --yellow:#c07800; --red:#c0306a;
+  --text:#1a1a1a; --dim:#333333;
+  --d0:#378ADD; --d1:#1D9E75; --hv:#c0306a;
+  --ghost-core:rgba(90,74,138,0.6); --ghost-mid:rgba(90,74,138,0.28); --ghost-faint:rgba(90,74,138,0.1);
+  --photon:#d42020;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{ padding:16px; background:var(--bg0); color:var(--text); font-family:var(--font); min-height:100vh; }
+header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px; max-width:1200px; margin-left:auto; margin-right:auto;
+  gap:12px; flex-wrap:wrap;
+}
+.title-wrap{ display:flex; align-items:center; gap:10px; }
+.mz-icon{ width:24px; height:24px; color:var(--cyan); display:inline-flex; animation:mzpulse 2.5s ease-in-out infinite; flex-shrink:0; }
+.mz-icon svg{ display:block; width:100%; height:100%; }
+@keyframes mzpulse{
+  0%,100%{ opacity:1;   filter:drop-shadow(0 0 5px var(--cyan)); }
+  50%    { opacity:.55; filter:none; }
+}
+[data-theme="light"] .mz-icon{ animation:mzpulse-light 2.5s ease-in-out infinite; }
+@keyframes mzpulse-light{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
+h1{
+  font-family:'Orbitron',sans-serif; font-weight:700;
+  font-size:15px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--green); margin:0; text-shadow:0 0 8px rgba(0,255,159,0.35);
+}
+[data-theme="light"] h1{ text-shadow:none; }
+.header-btns{ display:flex; gap:8px; }
+.btn-util{
+  background:var(--bg2); color:var(--dim); border:1px solid var(--dim);
+  padding:7px 14px; font-family:var(--font); font-size:.8rem;
+  cursor:pointer; transition:var(--tr); font-weight:700;
+  letter-spacing:.08em; text-transform:uppercase;
+}
+[data-theme="light"] .btn-util{ color:#1a1a1a; border-color:#1a1a1a; }
+.btn-util:hover{ border-color:var(--green); color:var(--green); box-shadow:0 0 8px var(--green); }
+
+main{ display:grid; gap:14px; grid-template-columns:1fr; max-width:1200px; margin:0 auto; }
+.row{ display:grid; gap:14px; }
+.row.split{ grid-template-columns:300px 1fr; }
+.row.split-stats{ grid-template-columns:1fr 1fr; }
+
+.box{ background:var(--bg1); border:1px solid var(--border); border-radius:6px; padding:14px; }
+.sec-title{
+  color:var(--green); font-weight:700; letter-spacing:.20em; text-transform:uppercase;
+  font-size:.78rem; padding-bottom:6px; margin-bottom:12px; border-bottom:1px solid var(--border);
+}
+
+.ctrl{ margin-bottom:14px; }
+.ctrl:last-child{ margin-bottom:0; }
+.ctrl-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.ctrl-label{ color:var(--text); font-size:.85rem; font-weight:700; }
+.ctrl-val{ color:var(--cyan); font-weight:700; font-size:.95rem; font-family:'Courier New',monospace; }
+input[type=range]{ width:100%; -webkit-appearance:none; background:transparent; margin:4px 0; cursor:pointer; }
+input[type=range]::-webkit-slider-runnable-track{ height:6px; background:var(--bg3); border-radius:3px; border:1px solid var(--border); }
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px; border-radius:50%;
+  background:var(--cyan); margin-top:-7px; cursor:pointer; border:2px solid var(--bg0);
+}
+input[type=range]::-moz-range-track{ height:6px; background:var(--bg3); border-radius:3px; border:1px solid var(--border); }
+input[type=range]::-moz-range-thumb{ width:18px; height:18px; border-radius:50%; background:var(--cyan); cursor:pointer; border:2px solid var(--bg0); }
+
+.btn-grp{ display:flex; gap:4px; flex-wrap:wrap; }
+.btn-sm{
+  flex:1; min-width:60px; background:var(--bg3); color:var(--text);
+  border:1px solid var(--border); padding:6px 8px; font-family:var(--font); font-size:.78rem;
+  cursor:pointer; transition:var(--tr); font-weight:700; letter-spacing:.05em;
+}
+.btn-sm:hover{ background:var(--bg2); }
+.btn-sm.active{ background:var(--cyan); color:var(--bg0); border-color:var(--cyan); }
+[data-theme="light"] .btn-sm.active{ color:#fff; }
+
+.btn-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.btn-big{
+  flex:1; min-width:90px; background:var(--green); color:var(--bg0);
+  border:none; padding:10px 12px; font-family:var(--font); font-size:.85rem; font-weight:700;
+  cursor:pointer; transition:var(--tr); letter-spacing:.08em; text-transform:uppercase;
+}
+[data-theme="light"] .btn-big{ color:#fff; }
+.btn-big:hover:not(:disabled){ filter:brightness(1.12); }
+.btn-big:disabled{ opacity:.35; cursor:not-allowed; }
+.btn-big.reset{ background:var(--yellow); }
+.btn-big.auto{ background:var(--cyan); }
+
+.toggle{ display:flex; align-items:center; gap:10px; }
+.tgl{
+  position:relative; width:46px; height:24px; background:var(--bg3); border:1px solid var(--border);
+  border-radius:12px; cursor:pointer; transition:var(--tr); flex-shrink:0;
+}
+.tgl::after{
+  content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+  background:var(--dim); transition:var(--tr);
+}
+.tgl.on{ background:var(--hv); border-color:var(--hv); }
+#slowTgl.on{ background:var(--yellow); border-color:var(--yellow); }
+.btn-inline{
+  margin-left:auto;
+  background:var(--bg2); color:var(--dim); border:1px solid var(--dim);
+  padding:5px 12px; font-family:var(--font); font-size:.78rem;
+  cursor:pointer; transition:var(--tr); font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase;
+}
+[data-theme="light"] .btn-inline{ color:#1a1a1a; border-color:#1a1a1a; }
+.btn-inline:hover{ border-color:var(--green); color:var(--green); box-shadow:0 0 8px var(--green); }
+.tgl.on::after{ left:24px; background:#fff; }
+.tgl-lbl{ font-family:'Courier New',monospace; font-weight:700; font-size:.85rem; }
+
+.canvas-wrap{ position:relative; }
+canvas{ display:block; width:100%; height:260px; background:var(--bg2); border:1px solid var(--border); border-radius:4px; }
+canvas.graph{ height:230px; }
+
+.stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.stat{ background:var(--bg2); border:1px solid var(--border); border-radius:4px; padding:10px; }
+.stat-label{ font-size:.7rem; color:var(--text); font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; opacity:.85; }
+.stat-val{ font-family:'Courier New',monospace; font-weight:700; font-size:1.4rem; }
+.stat-val.c-d0{ color:var(--d0); }
+.stat-val.c-d1{ color:var(--d1); }
+
+.bar-wrap{ margin-top:2px; }
+.bar-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:.78rem; font-weight:700; }
+.bar-row:last-child{ margin-bottom:0; }
+.bar-lbl{ width:34px; flex-shrink:0; }
+.bar-lbl.c-d0{ color:var(--d0); }
+.bar-lbl.c-d1{ color:var(--d1); }
+.bar-track{ flex:1; height:16px; background:var(--bg3); border:1px solid var(--border); border-radius:3px; overflow:hidden; }
+.bar-fill{ height:100%; transition:width .25s ease; }
+.bar-fill.c-d0{ background:var(--d0); }
+.bar-fill.c-d1{ background:var(--d1); }
+.bar-pct{ width:56px; text-align:right; flex-shrink:0; font-family:'Courier New',monospace; }
+
+.explain p{ margin:0 0 8px 0; line-height:1.55; }
+.explain p:last-child{ margin:0; }
+[data-theme="light"] .explain p{ color:#161616; font-weight:700; }
+.legend{ display:flex; flex-wrap:wrap; gap:16px; margin-top:8px; padding-top:10px; border-top:1px solid var(--border); }
+.legend-item{ display:flex; align-items:center; gap:6px; font-size:.82rem; font-weight:700; }
+.legend-sw{ width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+
+.hide{ display:none !important; }
+
+/* Modal popup (opgaveark) - samme mønster som BB84 */
+.modal-bg{
+  position:fixed; inset:0; z-index:100;
+  background:rgba(0,0,0,0.72);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+  animation:fadein .2s ease;
+}
+[data-theme="light"] .modal-bg{ background:rgba(0,0,0,0.45); }
+@keyframes fadein{ from{opacity:0} to{opacity:1} }
+.modal-box{
+  background:var(--bg1); border:1px solid var(--border);
+  border-radius:6px; max-width:820px; width:100%;
+  max-height:90vh; overflow-y:auto;
+  padding:24px 28px; position:relative;
+  box-shadow:0 0 30px rgba(0,255,159,0.15);
+}
+[data-theme="light"] .modal-box{ box-shadow:0 4px 24px rgba(0,0,0,0.18); }
+.modal-close{
+  position:absolute; top:10px; right:10px;
+  width:32px; height:32px; border-radius:4px;
+  background:var(--bg2); color:var(--dim);
+  border:1px solid var(--border);
+  font-family:var(--font); font-size:1.1rem; font-weight:700;
+  cursor:pointer; transition:var(--tr);
+  line-height:1; display:flex; align-items:center; justify-content:center;
+}
+.modal-close:hover{ border-color:var(--green); color:var(--green); }
+.modal-box h2{
+  color:var(--green); font-family:'Orbitron',sans-serif;
+  font-size:15px; letter-spacing:.18em; text-transform:uppercase;
+  margin:24px 0 12px 0; padding-bottom:6px;
+  border-bottom:1px solid var(--border);
+}
+.modal-box h2:first-child{ margin-top:0; }
+.modal-box h1{
+  font-family:'Orbitron',sans-serif;
+  font-size:18px; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--green); margin:0 0 4px 0;
+}
+.modal-box .subtitle{ color:var(--dim); font-size:.9rem; margin-bottom:18px; }
+.modal-box p{ line-height:1.55; margin:0 0 10px 0; font-size:.92rem; }
+[data-theme="light"] .modal-box p{ color:#161616; }
+.modal-box ul, .modal-box ol{ margin:0 0 12px 0; padding-left:24px; line-height:1.55; font-size:.92rem; }
+.modal-box li{ margin-bottom:4px; }
+[data-theme="light"] .modal-box li{ color:#161616; }
+.modal-box table{
+  width:auto; border-collapse:collapse;
+  font-family:'Courier New',monospace; font-size:.88rem;
+  margin:0 0 14px 0;
+}
+.modal-box th, .modal-box td{
+  border:1px solid var(--border);
+  padding:5px 12px; text-align:left;
+}
+.modal-box th{
+  background:var(--bg2); color:var(--green); font-weight:700;
+  text-transform:none; letter-spacing:0; font-size:.85rem;
+  position:static;
+}
+[data-theme="light"] .modal-box th{ color:#1D9E75; }
+.modal-box hr{
+  border:none; border-top:1px solid var(--border);
+  margin:18px 0;
+}
+.modal-box .op{
+  background:rgba(0,207,255,0.06);
+  border-left:3px solid var(--cyan);
+  padding:8px 12px; margin:10px 0;
+}
+[data-theme="light"] .modal-box .op{ background:rgba(55,138,221,0.10); }
+.modal-box code{
+  background:var(--bg3); padding:1px 4px; border-radius:3px;
+  font-size:.85em;
+}
+.modal-box .footer-note{
+  color:var(--dim); font-style:italic; font-size:.85rem;
+  margin-top:20px; padding-top:12px; border-top:1px solid var(--border);
+}
+.modal-box .formula{
+  text-align:center; font-family:'Courier New',monospace; font-weight:700;
+  font-size:1rem; margin:14px 0; color:var(--cyan);
+}
+[data-theme="light"] .modal-box .formula{ color:#378ADD; }
+.modal-box .hint-line{
+  color:var(--dim); font-style:italic; font-size:.85rem;
+  border-left:3px solid var(--cyan); padding:6px 12px; margin-bottom:16px;
+  background:rgba(0,207,255,0.05);
+}
+[data-theme="light"] .modal-box .hint-line{ color:#333; background:rgba(55,138,221,0.08); }
+.arrow-fig{ margin:16px 0; display:flex; justify-content:center; }
+.arrow-fig svg{ width:100%; max-width:420px; height:auto; }
+
+/* Hover-tooltip for komponenter i interferometer-skemaet */
+.mz-tooltip{
+  position:absolute; z-index:50; pointer-events:none;
+  max-width:240px; padding:8px 11px;
+  background:var(--bg1); border:1px solid var(--cyan); border-radius:5px;
+  color:var(--text); font-size:.8rem; line-height:1.45;
+  box-shadow:0 3px 14px rgba(0,0,0,0.4);
+  opacity:0; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
+}
+.mz-tooltip.show{ opacity:1; transform:translateY(0); }
+.mz-tooltip .tt-title{ color:var(--cyan); font-weight:700; display:block; margin-bottom:3px; letter-spacing:.03em; }
+[data-theme="light"] .mz-tooltip{ box-shadow:0 3px 14px rgba(0,0,0,0.2); }
+[data-theme="light"] .mz-tooltip .tt-body{ color:#161616; }
+
+@media (max-width:820px){
+  .row.split{ grid-template-columns:1fr; }
+  .row.split-stats{ grid-template-columns:1fr; }
+  canvas{ height:220px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-wrap">
+    <span class="mz-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M3 17h5l3-10 3 10h7"/>
+        <rect x="6" y="15" width="4" height="4" fill="currentColor" stroke="none"/>
+        <rect x="14" y="15" width="4" height="4" fill="currentColor" stroke="none"/>
+      </svg>
+    </span>
+    <h1>Mach-Zehnder-interferometer — enkeltfoton</h1>
+  </div>
+  <div class="header-btns">
+    <button class="btn-util" id="explainBtn">Forklaring</button>
+    <button class="btn-util" id="taskBtn">Opgave</button>
+    <button class="btn-util" id="copyBtn">Kopier kode</button>
+    <button class="btn-util" id="themeBtn">Lyst tema</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="row split">
+    <div class="box">
+      <div class="sec-title">Indstillinger</div>
+
+      <div class="ctrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Ekstra faseforskel φ</span>
+          <span class="ctrl-val" id="phaseVal">45°</span>
+        </div>
+        <input type="range" id="phaseSlider" min="0" max="360" value="45" step="5">
+      </div>
+
+      <div class="ctrl">
+        <div class="toggle">
+          <span class="ctrl-label">Hvilken-vej-detektor</span>
+          <div class="tgl" id="hvTgl"></div>
+          <span class="tgl-lbl" id="hvLbl" style="color:var(--dim)">FRA</span>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <div class="toggle">
+          <span class="ctrl-label">Slowmo</span>
+          <div class="tgl" id="slowTgl"></div>
+          <span class="tgl-lbl" id="slowLbl" style="color:var(--dim)">FRA</span>
+          <button class="btn-inline" id="muteBtn">Lyd: til</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <div class="ctrl-row"><span class="ctrl-label">Skydemodus</span></div>
+        <div class="btn-grp" id="modeGrp">
+          <button class="btn-sm active" data-mode="manual">Manuel</button>
+          <button class="btn-sm" data-mode="auto">Auto</button>
+        </div>
+      </div>
+
+      <div class="ctrl hide" id="rateCtrl">
+        <div class="ctrl-row">
+          <span class="ctrl-label">Fotoner / sekund</span>
+          <span class="ctrl-val" id="rateVal">3</span>
+        </div>
+        <input type="range" id="rateSlider" min="1" max="20" value="3" step="1">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-big" id="fireBtn">Skyd foton</button>
+      </div>
+      <div class="btn-row hide" id="autoBtnRow">
+        <button class="btn-big auto" id="autoBtn">Start auto-fire</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-big reset" id="resetBtn">Nulstil statistik</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="sec-title">Interferometer</div>
+      <div class="canvas-wrap">
+        <canvas id="mz"></canvas>
+        <div class="mz-tooltip" id="mzTooltip"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row split-stats">
+    <div class="box">
+      <div class="sec-title">Statistik</div>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">Skudte fotoner</div>
+          <div class="stat-val" id="sTotal">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Hvilken-vej</div>
+          <div class="stat-val" id="sHv" style="color:var(--hv)">FRA</div>
+        </div>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-row">
+          <span class="bar-lbl c-d0">D1</span>
+          <div class="bar-track"><div class="bar-fill c-d0" id="barD0" style="width:0%"></div></div>
+          <span class="bar-pct" id="pctD0">— %</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-lbl c-d1">D2</span>
+          <div class="bar-track"><div class="bar-fill c-d1" id="barD1" style="width:0%"></div></div>
+          <span class="bar-pct" id="pctD1">— %</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="sec-title">Teori vs. empiri: P(detektor) som funktion af φ</div>
+      <div class="canvas-wrap">
+        <canvas class="graph" id="graph"></canvas>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modal: Forklaring -->
+<div class="modal-bg hide" id="explainModal">
+  <div class="modal-box" role="dialog" aria-labelledby="explainTitle">
+    <button class="modal-close" id="explainClose" aria-label="Luk">×</button>
+
+    <h1 id="explainTitle">Komplementaritet</h1>
+
+    <p class="hint-line">Tip: peg på de enkelte dele i interferometeret (stråledelere, spejle, faseboks, detektorer) for at få en kort forklaring på, hvad de gør.</p>
+
+    <p>Laseren udsender en foton ad gangen. Fotonen møder først en stråledeler (beam-splitter) som vi kalder BS1, hvorved der opstår to lige mulige veje.</p>
+
+    <p>Med hvilken-vej-detektoren FRA beskrives enkeltfotonen som en superposition af de to mulige veje. Ved den anden stråledeler mødes de to veje igen. Her kan de forstærke hinanden ved den ene detektor og svække eller ophæve hinanden ved den anden. Det der afgør klikfordelingen i de to detektorer, er faseforskellen mellem de to arme.</p>
+
+    <p><b>To slags fase er vigtige:</b> Stråledelerne giver faste fasebidrag, som allerede er indbygget i simuleringen. I denne idealiserede model giver en stråledeler et fast faseskift på 90° mellem reflekteret og transmitteret mulighed. Faseboksen giver derimod en ekstra faseforskel φ mellem armene. Den ekstra fase kan i et virkeligt interferometer skyldes fx en glasplade, en lille vejlængdeforskel, en gas eller en temperaturændring i den ene arm.</p>
+
+    <p>I simuleringen er interferometret sat sådan op, at φ = 0° giver alle klik i D1. Hvorfor det er sådan, behandles i en opgave. Når φ ændres, ændres den samlede faseforskel. Det kan vises, at sandsynlighederne for at fotonen registreres i de to detektorer er</p>
+    <p class="formula">P(D1) = cos²(φ/2) &nbsp;&nbsp;og&nbsp;&nbsp; P(D2) = sin²(φ/2).</p>
+    <p>De enkelte registreringer er stadig punktformige klik i én detektor ad gangen. Interferensen viser sig i fordelingen af mange klik: Når faseforskellen mellem de to veje ændres, flyttes sandsynligheden mellem D1 og D2. Det skyldes, at amplituderne kan forstærke hinanden ved den ene detektor og svække hinanden ved den anden.</p>
+
+    <p>De diffuse prikker, du ser bevæge sig i armene, er en visualisering af amplituderne for de to mulige veje. De skal ikke forstås som to halve fotoner, men som én enkeltfoton-tilstand i en superposition af vej A og vej B.</p>
+
+    <p>Slås hvilken-vej-detektoren TIL, bliver det i princippet muligt at afgøre, hvilken arm fotonen har passeret. Så forsvinder den faste fase-sammenhæng mellem de to veje, og interferensen forsvinder: begge detektorer klikker nu 50/50, uanset hvad φ er sat til. HV-detektoren sidder i begge arme; kun den arm, fotonen faktisk registreres i, blinker.</p>
+
+    <p>Dette er et eksempel på <b>komplementaritet</b>: Når der ikke findes hvilken-vej-information, kan de to mulige veje interferere, og klikfordelingen afhænger af faseforskellen φ. Når hvilken-vej-informationen findes, forsvinder interferensen, og faseforskellen kan ikke længere ses i klikfordelingen.</p>
+
+    <p>Statistikken nulstilles automatisk, når φ ændres, eller når hvilken-vej-detektoren slås til/fra. Dermed sammenlignes de empiriske frekvenser kun med én fast forsøgsindstilling ad gangen.</p>
+
+    <p><b>Bemærk:</b> 90°-faseskiftet betyder ikke, at strålen drejer 90°. Det handler om fasen af den amplitude, der hører til den reflekterede mulighed, sammenlignet med den transmitterede mulighed. Retningsvinklen på tegningen og fasevinklen i amplituden er to forskellige ting. Fasevinklen er det, der afgør, om de to muligheder forstærker eller ophæver hinanden ved den anden stråledeler. I virkelige stråledelere afhænger fasebidraget desuden af coating, polarisering, bølgelængde og hvilken side lyset rammer fra. I nogle konkrete stråledelere kan refleksion fra den ene side fx give et fasebidrag på 180°, mens refleksion fra den anden side kan give et fasebidrag på 0°.</p>
+  </div>
+</div>
+
+<!-- Modal: Opgave -->
+<div class="modal-bg hide" id="taskModal">
+  <div class="modal-box" role="dialog" aria-labelledby="taskTitle">
+    <button class="modal-close" id="taskClose" aria-label="Luk">×</button>
+
+    <h1 id="taskTitle">Mach-Zehnder-interferometer</h1>
+    <p class="subtitle">Opgaver til enkeltfoton-simuleringen</p>
+
+    <h2>Før I går i gang</h2>
+    <p>Læs forklaringsboksen.</p>
+    <p>Fotoner sendes ind i interferometeret én ad gangen. Hver foton giver ét klik i enten D1 eller D2. I opgaverne skal I undersøge, hvordan klikfordelingen afhænger af den ekstra faseforskel φ og af, om hvilken-vej-detektoren er slået til eller fra.</p>
+    <p>Start med at se på simuleringen uden at bruge formlerne. Prøv først at finde mønstre i klikfordelingen. Bagefter skal I forklare mønstrene ved hjælp af fase og interferens.</p>
+
+    <h2>Opgavesæt</h2>
+    <p>Arbejd gerne to og to. Husk at statistikken nulstilles automatisk, hver gang I ændrer fase eller slår hvilken-vej-detektoren til/fra.</p>
+
+    <div class="op"><b>Opgave 1 - Første observation.</b> Sæt hvilken-vej-detektoren til FRA og vælg φ = 0°. Skyd mindst 30 fotoner.
+      <p>a) Hvilken detektor klikker?</p>
+      <p>b) Var det, hvad I forventede?</p>
+      <p>c) Hvad ville I have forventet, hvis fotonen bare valgte én bestemt vej ved den første stråledeler?</p>
+    </div>
+
+    <div class="op"><b>Opgave 2 - Hvorfor ender alle klik i D1 ved φ = 0°?</b> I modellen giver en idealiseret stråledeler et fast faseskift på 90° mellem reflekteret og transmitteret mulighed.
+      <p>a) Følg de to mulige veje frem mod D2. Hvor mange gange bliver hver mulighed reflekteret eller transmitteret i stråledelerne?</p>
+      <p>b) Brug 90°-fasebidragene ved hver detektor til at forklare, hvorfor de to muligheder kan ophæve hinanden ved D2, når φ = 0°.</p>
+      <p>c) Forklar med egne ord, hvorfor det samtidig betyder, at fotonerne ender i D1.</p>
+    </div>
+
+    <div class="op"><b>Opgave 3 - Forskellige faseindstillinger.</b> Mål klikfordelingen for φ = 0°, 90° og 180°. Brug mindst 50 fotoner ved hver indstilling.
+      <table>
+        <tr><th>φ</th><th>Andel D1</th><th>Andel D2</th></tr>
+        <tr><td>0°</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><td>90°</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><td>180°</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </table>
+      <p>a) Beskriv mønstret i jeres målinger.</p>
+      <p>b) Hvad sker der med D1, når φ ændres fra 0° til 90°, og til 180°?</p>
+      <p>c) Hvad sker der samtidig med D2?</p>
+      <p>d) Den teoretiske model, når hvilken-vej-detektoren er slået fra, er P(D1) = cos²(φ/2) og P(D2) = sin²(φ/2). Passer resultaterne med modellen? Hvilken faseforskel giver P(D1) = P(D2)?</p>
+    </div>
+
+    <div class="op"><b>Opgave 4 - Hvilken-vej og interferens.</b> Vælg φ = 0°. Mål først med hvilken-vej-detektoren FRA og derefter med hvilken-vej-detektoren TIL. Brug mindst 50 fotoner i hvert forsøg.
+      <p>a) Hvad sker der med fordelingen, når hvilken-vej-detektoren slås til?</p>
+      <p>b) Kan den ekstra fase φ stadig ændre klikfordelingen, når hvilken-vej-detektoren er til?</p>
+      <p>c) Forklar resultatet med ordene information, fase og interferens.</p>
+    </div>
+
+    <h2>Komplementaritet</h2>
+    <p>Mach-Zehnder-interferometeret viser komplementaritet: Når der ikke findes hvilken-vej-information, kan de to mulige veje interferere, og klikfordelingen afhænger af faseforskellen φ. Når hvilken-vej-informationen findes, forsvinder interferensen, og faseforskellen kan ikke længere ses i klikfordelingen.</p>
+
+    <h2>Uddybning: hvorfor cos² og sin²?</h2>
+    <p>Når hvilken-vej-detektoren er FRA, lægges amplituder sammen, før man beregner sandsynligheden. Man kan tænke på amplituder som små pile. Pilens retning viser fasen.</p>
+    <p>Ved den anden stråledeler mødes to lige store amplitude-pile: én fra hver arm. Hvis de peger samme vej, forstærker de hinanden. Hvis de peger modsat, ophæver de hinanden.</p>
+    <p>Hvis faseforskellen mellem armene er φ, er vinklen mellem pilene φ. Når to lige lange pile lægges sammen, peger summen midt imellem dem. Derfor optræder halvvinklen φ/2. Længden af den samlede amplitude afhænger af cos(φ/2).</p>
+    <div class="arrow-fig" id="arrowFig"></div>
+    <p>Da sandsynligheden fås ved at kvadrere amplitudens længde, får man vha. cosinusrelationerne og de såkaldte halvvinkelformler for sinus og cosinus</p>
+    <p class="formula">P(D1) = cos²(φ/2).</p>
+    <p>Tilsvarende bliver den komplementære sandsynlighed</p>
+    <p class="formula">P(D2) = sin²(φ/2).</p>
+
+    <div class="op"><b>Opgave 5 - Forskellige armlængder.</b> I et virkeligt Mach-Zehnder-interferometer kan faseforskellen mellem armene skyldes, at den ene arm er lidt længere end den anden. Antag, at hvilken-vej-detektoren er slået FRA, og at interferometeret bruger laserlys med bølgelængden 633 nm. Den ekstra faseforskel fra en armlængdeforskel ΔL er φ = 360° · (ΔL / λ). Antag, at der i simuleringen efter mange fotoner er målt P(D1) = 75% og P(D2) = 25%.
+      <p>a) Brug modellen P(D1) = cos²(φ/2) til at finde en mulig faseforskel φ.</p>
+      <p>b) Beregn den tilsvarende armlængdeforskel ΔL.</p>
+      <p>c) Hvorfor kan man ikke ud fra klikfordelingen alene altid afgøre den præcise armlængdeforskel?</p>
+      <p>d) Hvilke ekstra oplysninger kunne gøre bestemmelsen entydig?</p>
+    </div>
+
+    <div class="op"><b>Opgave 6 - Hvad betyder faseboksen?</b> Faseboksen i simuleringen viser ikke det faste fasebidrag fra stråledelerne. Den viser en ekstra faseforskel φ mellem armene.
+      <p>a) Nævn to fysiske ting, der i et virkeligt interferometer kunne give en ekstra faseforskel mellem armene.</p>
+      <p>b) Hvorfor ændrer klikfordelingen sig, når φ ændres, hvis hvilken-vej-detektoren er FRA?</p>
+      <p>c) Hvorfor ændrer klikfordelingen sig ikke, når φ ændres, hvis hvilken-vej-detektoren er TIL?</p>
+    </div>
+
+    <div class="op"><b>Opgave 7 - 90-graders-fælden.</b> Påstand: "Stråledeleren giver 90° faseskift, fordi den reflekterede stråle går vinkelret på den transmitterede."
+      <p>a) Hvad er misforståelsen?</p>
+      <p>b) Skriv en bedre forklaring med højst tre sætninger, hvor I skelner mellem retningsvinkel og fasevinkel.</p>
+      <p>c) Tegn eventuelt en lille skitse, der viser forskellen på en retningsvinkel og en fasevinkel.</p>
+    </div>
+
+    <div class="footer-note">Huskeregel: Uden hvilken-vej-information kan de to mulige veje interferere, og den ekstra fase φ kan ændre fordelingen mellem D1 og D2. Med hvilken-vej-information forsvinder interferensen, og fordelingen bliver 50/50.</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   TEMA
+   ============================================================ */
+let isDark = true;
+document.getElementById('themeBtn').addEventListener('click', () => {
+  isDark = !isDark;
+  if (isDark) document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', 'light');
+  document.getElementById('themeBtn').textContent = isDark ? 'Lyst tema' : 'Mørkt tema';
+  drawMZ(); drawGraph(); drawArrowFig();
+});
+
+document.getElementById('copyBtn').addEventListener('click', (e) => {
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const btn = e.currentTarget;
+  const original = btn.textContent;
+  navigator.clipboard.writeText(html).then(() => {
+    btn.textContent = 'Kopieret!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }).catch(() => {
+    btn.textContent = 'Fejl';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+});
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  phaseDeg: 45,
+  whichPath: false,
+  mode: 'manual',
+  rate: 3,
+  autoPlaying: false,
+  muted: false,
+  slowmo: false,
+  countD0: 0,
+  countD1: 0,
+  particles: [],
+  nextFireDue: 0,
+  hvAnim: 0
+};
+
+function cssVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/* ============================================================
+   LYD (kort, forsigtig klik-lyd pr. detektor)
+   ============================================================ */
+let actx = null;
+function ensureAudio(){ if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playClick(freq){
+  if (state.muted) return;
+  try{
+    ensureAudio();
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.001, actx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.12, actx.currentTime + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.09);
+    osc.connect(gain); gain.connect(actx.destination);
+    osc.start();
+    osc.stop(actx.currentTime + 0.1);
+  } catch(e){ /* lyd er ikke kritisk */ }
+}
+
+/* ============================================================
+   GEOMETRI (logisk koordinatsystem 700x260)
+   ============================================================ */
+const W = 700, H = 280;
+const LASER = {x:30, y:220};
+const BS1   = {x:150, y:220};
+const MIRR_TOP = {x:150, y:75};
+const BS2   = {x:530, y:75};
+const MIRR_RIGHT = {x:530, y:220};
+const PHASE_BOX = {x:280, y:220};
+const HV_TOP = {x:245, y:75};
+const HV_BOTTOM = {x:390, y:220};
+const HV_PARK_TOP = {x:245, y:147.5};    // HV-top parkerer lodret under sin plads
+const HV_PARK_BOTTOM = {x:390, y:147.5}; // HV-bund parkerer lodret over sin plads
+const D0 = {x:650, y:75};
+const D1 = {x:530, y:32};
+
+// Arm A (øverst): BS1 -> Mirror_top -> BS2
+const armA = [ {x:BS1.x,y:BS1.y}, {x:MIRR_TOP.x,y:MIRR_TOP.y}, {x:BS2.x,y:BS2.y} ];
+// Arm B (nederst, med fase + hvilken-vej): BS1 -> Mirror_right -> BS2
+const armB = [ {x:BS1.x,y:BS1.y}, {x:MIRR_RIGHT.x,y:MIRR_RIGHT.y}, {x:BS2.x,y:BS2.y} ];
+const toLaser = [ {x:LASER.x,y:LASER.y}, {x:BS1.x,y:BS1.y} ];
+const toD0 = [ {x:BS2.x,y:BS2.y}, {x:D0.x,y:D0.y} ];
+const toD1 = [ {x:BS2.x,y:BS2.y}, {x:D1.x,y:D1.y} ];
+
+function pathLength(pts){
+  let L=0; for(let i=1;i<pts.length;i++){ L += Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y); }
+  return L;
+}
+function pointOnPath(pts, t){
+  const segLens = [];
+  let total = 0;
+  for(let i=1;i<pts.length;i++){ const l = Math.hypot(pts[i].x-pts[i-1].x, pts[i].y-pts[i-1].y); segLens.push(l); total += l; }
+  let target = t*total;
+  for(let i=0;i<segLens.length;i++){
+    if(target <= segLens[i] || i===segLens.length-1){
+      const frac = segLens[i] > 0 ? Math.min(1,target/segLens[i]) : 1;
+      const p0 = pts[i], p1 = pts[i+1];
+      return { x: p0.x + (p1.x-p0.x)*frac, y: p0.y + (p1.y-p0.y)*frac };
+    }
+    target -= segLens[i];
+  }
+  return pts[pts.length-1];
+}
+
+/* ============================================================
+   CANVAS FIT (fast logisk størrelse, devicePixelRatio-sikker)
+   ============================================================ */
+const mzCanvas = document.getElementById('mz');
+const mzCtx = mzCanvas.getContext('2d');
+const graphCanvas = document.getElementById('graph');
+const graphCtx = graphCanvas.getContext('2d');
+
+function fitCanvas(canvas, logicalW, logicalH){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  // Uniform skala (letterboxed) - undgår at cirkler/tekst bliver forvrænget
+  // når kassens billedformat ikke matcher det logiske koordinatsystem.
+  const scale = Math.min(canvas.width/logicalW, canvas.height/logicalH);
+  const offX = (canvas.width - logicalW*scale) / 2;
+  const offY = (canvas.height - logicalH*scale) / 2;
+  ctx.setTransform(scale, 0, 0, scale, offX, offY);
+}
+function fitAll(){
+  fitCanvas(mzCanvas, W, H);
+  fitCanvas(graphCanvas, 700, 230);
+  drawMZ(); drawGraph();
+}
+
+/* ============================================================
+   HOVER-TOOLTIPS FOR KOMPONENTER
+   ============================================================ */
+const mzTooltip = document.getElementById('mzTooltip');
+// Hotspots defineres i logiske koordinater; radius er ligeledes logisk
+function hoverTargets(){
+  const t = [
+    { x:BS1.x, y:BS1.y, r:24, title:'Stråledeler 1 (BS1)',
+      body:'Skaber to mulige veje med lige store amplituder. I modellen giver stråledeleren også et fast fasebidrag, som er indbygget i simuleringens nulpunkt.' },
+    { x:BS2.x, y:BS2.y, r:24, title:'Stråledeler 2 (BS2)',
+      body:'Her mødes de to mulige veje igen. De faste fasebidrag fra stråledelerne og den ekstra fase φ bestemmer, om amplituderne forstærker eller ophæver hinanden ved D1 og D2.' },
+    { x:PHASE_BOX.x, y:PHASE_BOX.y, r:22, title:'Faseskifter (φ)',
+      body:'Tilføjer en ekstra faseforskel mellem de to arme. Det kan svare til fx en glasplade, en lille vejlængdeforskel eller et stof i den ene arm.' },
+    { x:MIRR_TOP.x, y:MIRR_TOP.y, r:20, title:'Spejl',
+      body:'Reflekterer fotonens vej i den øverste arm hen mod anden stråledeler.' },
+    { x:MIRR_RIGHT.x, y:MIRR_RIGHT.y, r:20, title:'Spejl',
+      body:'Reflekterer fotonens vej i den nederste arm hen mod anden stråledeler.' },
+    { x:D0.x, y:D0.y, r:20, title:'Detektor D1',
+      body:'Registrerer fotonen. Ved φ = 0° ender alle klik her. Sandsynligheden for klik er cos²(φ/2), når hvilken-vej-detektoren er FRA.' },
+    { x:D1.x, y:D1.y, r:20, title:'Detektor D2',
+      body:'Registrerer fotonen. Ved φ = 0° klikker den aldrig. Sandsynligheden for klik er sin²(φ/2), når hvilken-vej-detektoren er FRA.' }
+  ];
+  // HV-detektorerne er kun til stede (og hoverbare) når de er slået til
+  if(state.whichPath){
+    t.push({ x:HV_TOP.x, y:HV_TOP.y, r:20, title:'Hvilken-vej-detektor (HV)',
+      body:'Gør det i princippet muligt at afgøre, hvilken arm fotonen passerer. Så forsvinder interferensen, og fordelingen bliver 50/50 uanset φ.' });
+    t.push({ x:HV_BOTTOM.x, y:HV_BOTTOM.y, r:20, title:'Hvilken-vej-detektor (HV)',
+      body:'Gør det i princippet muligt at afgøre, hvilken arm fotonen passerer. Så forsvinder interferensen, og fordelingen bliver 50/50 uanset φ.' });
+  }
+  return t;
+}
+
+function canvasToLogical(clientX, clientY){
+  const rect = mzCanvas.getBoundingClientRect();
+  // Uniform letterboxed skala matcher fitCanvas
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const cw = rect.width * dpr, ch = rect.height * dpr;
+  const scale = Math.min(cw/W, ch/H);
+  const offX = (cw - W*scale)/2, offY = (ch - H*scale)/2;
+  const px = (clientX - rect.left) * dpr;
+  const py = (clientY - rect.top) * dpr;
+  return { x:(px - offX)/scale, y:(py - offY)/scale };
+}
+
+mzCanvas.addEventListener('mousemove', (e) => {
+  const lp = canvasToLogical(e.clientX, e.clientY);
+  const targets = hoverTargets();
+  let hit = null;
+  for(const tg of targets){
+    if(Math.hypot(lp.x-tg.x, lp.y-tg.y) <= tg.r){ hit = tg; break; }
+  }
+  if(hit){
+    mzTooltip.innerHTML = '<span class="tt-title">'+hit.title+'</span><span class="tt-body">'+hit.body+'</span>';
+    // Placér tooltip ved musen (i pixel-koordinater relativt til canvas-wrap)
+    const rect = mzCanvas.getBoundingClientRect();
+    let left = e.clientX - rect.left + 14;
+    let top = e.clientY - rect.top + 14;
+    // Hold inden for canvas-bredden
+    if(left + 250 > rect.width) left = e.clientX - rect.left - 254;
+    mzTooltip.style.left = left + 'px';
+    mzTooltip.style.top = top + 'px';
+    mzTooltip.classList.add('show');
+    mzCanvas.style.cursor = 'help';
+  } else {
+    mzTooltip.classList.remove('show');
+    mzCanvas.style.cursor = 'default';
+  }
+});
+mzCanvas.addEventListener('mouseleave', () => {
+  mzTooltip.classList.remove('show');
+  mzCanvas.style.cursor = 'default';
+});
+
+/* ============================================================
+   FYSIK
+   ============================================================ */
+function probD0(phiDeg){
+  const phi = phiDeg * Math.PI/180;
+  return Math.cos(phi/2)**2;
+}
+function decideOutcome(){
+  if(state.whichPath){
+    const arm = Math.random() < 0.5 ? 'A' : 'B';
+    const detector = Math.random() < 0.5 ? 'D0' : 'D1';
+    return {arm, detector};
+  } else {
+    const pD0 = probD0(state.phaseDeg);
+    const detector = Math.random() < pD0 ? 'D0' : 'D1';
+    // Uden hvilken-vej visualiseres amplituderne langs begge arme samtidig
+    return {arm:'begge', detector};
+  }
+}
+
+/* ============================================================
+   TEGNING: INTERFEROMETER-SKEMA
+   ============================================================ */
+function drawBS(ctx, x, y, glow){
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(Math.PI/4);
+  ctx.fillStyle = cssVar('--bg3');
+  ctx.strokeStyle = glow ? cssVar('--yellow') : cssVar('--text');
+  ctx.lineWidth = 2;
+  ctx.fillRect(-11,-11,22,22);
+  ctx.strokeRect(-11,-11,22,22);
+  ctx.restore();
+}
+function drawMirror(ctx, x, y){
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(-Math.PI/4);
+  ctx.strokeStyle = cssVar('--text'); ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-13,0); ctx.lineTo(13,0); ctx.stroke();
+  ctx.restore();
+}
+function drawDetector(ctx, x, y, color, label, flashT){
+  ctx.save();
+  const glow = flashT > 0;
+  ctx.translate(x,y);
+  ctx.fillStyle = cssVar('--bg3');
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  if(glow){ ctx.shadowColor = color; ctx.shadowBlur = 18*flashT; }
+  ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = color;
+  ctx.font = 'bold 13px "Courier New",monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, 0, 1);
+  ctx.restore();
+}
+function labelFor(det){ return det === 'D0' ? 'D1' : 'D2'; }
+function drawHvDetector(ctx, x, y, on, flashT, scale, opacity){
+  if(opacity <= 0.01) return;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.globalAlpha = opacity;
+  ctx.scale(scale, scale);
+  const color = on ? cssVar('--hv') : cssVar('--dim');
+  ctx.strokeStyle = color; ctx.fillStyle = cssVar('--bg3');
+  ctx.lineWidth = 2;
+  if(flashT>0){ ctx.shadowColor = color; ctx.shadowBlur = 18*flashT; }
+  ctx.beginPath(); ctx.moveTo(-14,-16); ctx.lineTo(14,-16); ctx.lineTo(14,16); ctx.lineTo(-14,16); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = color;
+  ctx.font = 'bold 12px "Courier New",monospace';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('HV', 0, 1);
+  ctx.restore();
+}
+function drawPhaseBox(ctx, x, y){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.strokeStyle = cssVar('--cyan'); ctx.fillStyle = cssVar('--bg3'); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-14,-14); ctx.lineTo(14,-14); ctx.lineTo(14,14); ctx.lineTo(-14,14); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = cssVar('--cyan');
+  ctx.font = 'bold 16px "Courier New",monospace';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('φ', 0, 1);
+  ctx.restore();
+}
+function drawPath(ctx, pts, color, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+let d0Flash = 0, d1Flash = 0, hvFlashBottom = 0, hvFlashTop = 0;
+
+function drawMZ(){
+  const ctx = mzCtx;
+  ctx.clearRect(0,0,W,H);
+  const lineCol = cssVar('--border');
+
+  // Baner (svage guide-linjer)
+  ctx.save(); ctx.globalAlpha = 0.55;
+  drawPath(ctx, toLaser, lineCol, 1);
+  drawPath(ctx, armA, lineCol, 1);
+  drawPath(ctx, armB, lineCol, 1);
+  drawPath(ctx, toD0, lineCol, 1);
+  drawPath(ctx, toD1, lineCol, 1);
+  ctx.restore();
+
+  // Laser
+  ctx.save();
+  ctx.fillStyle = cssVar('--red');
+  ctx.fillRect(LASER.x-14, LASER.y-6, 14, 12);
+  ctx.fillStyle = cssVar('--text');
+  ctx.font = 'bold 10px "Courier New",monospace'; ctx.textAlign='center';
+  ctx.fillText('LASER', LASER.x-7, LASER.y+22);
+  ctx.restore();
+
+  // Komponenter
+  drawBS(ctx, BS1.x, BS1.y, false);
+  drawBS(ctx, BS2.x, BS2.y, false);
+  drawMirror(ctx, MIRR_TOP.x, MIRR_TOP.y);
+  drawMirror(ctx, MIRR_RIGHT.x, MIRR_RIGHT.y);
+  drawPhaseBox(ctx, PHASE_BOX.x, PHASE_BOX.y);
+
+  // HV-detektorer glider ind fra midten mellem armene, når de slås til
+  const a = state.hvAnim; // 0 = parkeret/usynlig, 1 = fuldt på plads
+  const easeA = a*a*(3-2*a); // smooth-step easing
+  const hvTopX = HV_PARK_TOP.x + (HV_TOP.x - HV_PARK_TOP.x)*easeA;
+  const hvTopY = HV_PARK_TOP.y + (HV_TOP.y - HV_PARK_TOP.y)*easeA;
+  const hvBotX = HV_PARK_BOTTOM.x + (HV_BOTTOM.x - HV_PARK_BOTTOM.x)*easeA;
+  const hvBotY = HV_PARK_BOTTOM.y + (HV_BOTTOM.y - HV_PARK_BOTTOM.y)*easeA;
+  drawHvDetector(ctx, hvTopX, hvTopY, state.whichPath, hvFlashTop, 0.4+0.6*easeA, easeA);
+  drawHvDetector(ctx, hvBotX, hvBotY, state.whichPath, hvFlashBottom, 0.4+0.6*easeA, easeA);
+
+  drawDetector(ctx, D0.x, D0.y, cssVar('--d0'), labelFor('D0'), d0Flash);
+  drawDetector(ctx, D1.x, D1.y, cssVar('--d1'), labelFor('D1'), d1Flash);
+
+  ctx.save();
+  ctx.fillStyle = cssVar('--text'); ctx.font='bold 13px "Courier New",monospace'; ctx.textAlign='center';
+  ctx.fillText('BS1', BS1.x, BS1.y+32);
+  ctx.fillText('BS2', BS2.x, BS2.y+32);
+  ctx.restore();
+
+  // Fotonpartikler
+  const now = performance.now();
+  for(const p of state.particles){
+    drawParticle(ctx, p, now);
+  }
+
+  // Flash-decay
+  d0Flash = Math.max(0, d0Flash - 0.035);
+  d1Flash = Math.max(0, d1Flash - 0.035);
+  hvFlashBottom = Math.max(0, hvFlashBottom - 0.035);
+  hvFlashTop = Math.max(0, hvFlashTop - 0.035);
+
+  // Glid hvAnim mod mål (0 = FRA/parkeret, 1 = TIL/på plads)
+  const hvTarget = state.whichPath ? 1 : 0;
+  state.hvAnim += (hvTarget - state.hvAnim) * 0.18;
+  if(Math.abs(hvTarget - state.hvAnim) < 0.002) state.hvAnim = hvTarget;
+}
+
+function glowDot(ctx, x, y, color, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.shadowColor = color; ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+// Lokaliseret foton: skarp rød prik med glød (ved laser, efter HV-måling, ved detektor)
+function redPhoton(ctx, x, y, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = cssVar('--photon');
+  ctx.shadowColor = cssVar('--photon'); ctx.shadowBlur = 12;
+  ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+// Spøgelsesagtig/diffus fotonvisualisering: en blød radial glød uden fast farve-identitet,
+// så fotonen ikke visuelt "afslører" hvilken detektor den er på vej mod.
+function ghostDot(ctx, x, y, alpha, radius){
+  const r = (radius || 10) * 1.35; // lidt større så gløden flyder mere ud
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // Blød gradient med lav-opacitet kerne der toner jævnt ud - ingen skarp midte
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+  grad.addColorStop(0,    cssVar('--ghost-core'));
+  grad.addColorStop(0.25, cssVar('--ghost-mid'));
+  grad.addColorStop(0.6,  cssVar('--ghost-faint'));
+  grad.addColorStop(1,    'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+// HV-detektorens position langs hver arm (som brøkdel af armens længde).
+// Begge sidder 240 langs deres (lige lange) arm, så kollapset sker synkront.
+const HV_LT_A = 0.4571; // arm A (øverst)
+const HV_LT_B = 0.4571; // arm B (nederst)
+
+function drawParticle(ctx, p, now){
+  const t = (now - p.startTime) / p.duration;
+  const T1 = 0.18, T2 = 0.62; // faseovergange
+  if(t < T1){
+    // Laser -> BS1: lokaliseret, rød foton
+    const lt = t/T1;
+    const pos = pointOnPath(toLaser, lt);
+    redPhoton(ctx, pos.x, pos.y, 0.95);
+  } else if(t < T2){
+    // I armene mellem BS1 og BS2
+    const lt = (t-T1)/(T2-T1);
+    if(p.outcome.arm === 'begge'){
+      // Hvilken-vej FRA: ægte superposition - diffus gråhvid i begge arme hele vejen
+      const posA = pointOnPath(armA, lt);
+      const posB = pointOnPath(armB, lt);
+      ghostDot(ctx, posA.x, posA.y, 0.5, 13);
+      ghostDot(ctx, posB.x, posB.y, 0.5, 13);
+    } else {
+      // Hvilken-vej TIL: ægte superposition (diffus i BEGGE arme) indtil HV-positionen,
+      // hvor målingen sker og fotonen materialiserer sig (rød) i den ene arm.
+      const arm = p.outcome.arm === 'A' ? armA : armB;
+      const hvLt = p.outcome.arm === 'A' ? HV_LT_A : HV_LT_B;
+      if(lt < hvLt){
+        // Før måling: stadig superposition - diffus i begge arme samtidig
+        const posA = pointOnPath(armA, lt);
+        const posB = pointOnPath(armB, lt);
+        ghostDot(ctx, posA.x, posA.y, 0.5, 13);
+        ghostDot(ctx, posB.x, posB.y, 0.5, 13);
+      } else {
+        // Efter HV-måling: materialiseret, rød, lokaliseret i den målte arm
+        const pos = pointOnPath(arm, lt);
+        redPhoton(ctx, pos.x, pos.y, 0.95);
+      }
+      // Udløs HV-flash i den arm fotonen faktisk måles i
+      if(!p.hvTriggered && lt >= hvLt){
+        p.hvTriggered = true;
+        if(p.outcome.arm === 'A'){ hvFlashTop = 1; } else { hvFlashBottom = 1; }
+        playClick(900);
+      }
+    }
+  } else {
+    // BS2 -> detektor: lokaliseret igen, rød foton
+    const lt = (t-T2)/(1-T2);
+    const dest = p.outcome.detector === 'D0' ? toD0 : toD1;
+    const pos = pointOnPath(dest, lt);
+    redPhoton(ctx, pos.x, pos.y, 0.95);
+    if(!p.registered && lt >= 0.98){
+      p.registered = true;
+      registerHit(p.outcome.detector);
+    }
+  }
+}
+
+function registerHit(det){
+  if(det === 'D0'){ state.countD0++; d0Flash = 1; playClick(660); }
+  else { state.countD1++; d1Flash = 1; playClick(440); }
+  updateStats();
+}
+
+/* ============================================================
+   TEGNING: TEORI/EMPIRI-GRAF
+   ============================================================ */
+function drawGraph(){
+  const ctx = graphCtx;
+  const gw = 700, gh = 230;
+  const padL = 46, padR = 14, padT = 14, padB = 34;
+  const plotW = gw - padL - padR, plotH = gh - padT - padB;
+  ctx.clearRect(0,0,gw,gh);
+
+  const textCol = cssVar('--text');
+  const borderCol = cssVar('--border');
+
+  // Akser
+  ctx.strokeStyle = borderCol; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT); ctx.lineTo(padL, padT+plotH); ctx.lineTo(padL+plotW, padT+plotH);
+  ctx.stroke();
+
+  // Y-ticks (0, 0.5, 1)
+  ctx.fillStyle = textCol; ctx.font = 'bold 11px "Courier New",monospace';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  [0,0.5,1].forEach(v=>{
+    const y = padT + plotH*(1-v);
+    ctx.fillText(v.toFixed(1), padL-8, y);
+    ctx.strokeStyle = borderCol; ctx.globalAlpha=0.4;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.stroke();
+    ctx.globalAlpha=1;
+  });
+  // X-ticks (0,90,180,270,360)
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  [0,90,180,270,360].forEach(v=>{
+    const x = padL + plotW*(v/360);
+    ctx.fillText(v+'°', x, padT+plotH+8);
+  });
+
+  function xOf(phi){ return padL + plotW*(phi/360); }
+  function yOf(p){ return padT + plotH*(1-p); }
+
+  if(state.whichPath){
+    // Fladt 50/50 (stiplet), interferens væk
+    ctx.setLineDash([6,5]);
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = cssVar('--hv');
+    ctx.beginPath(); ctx.moveTo(xOf(0), yOf(0.5)); ctx.lineTo(xOf(360), yOf(0.5)); ctx.stroke();
+    ctx.setLineDash([]);
+    const labelTxt = 'P = 0,5 for begge (ingen interferens)';
+    ctx.font = 'bold 12px "Courier New",monospace';
+    const tw = ctx.measureText(labelTxt).width;
+    // Placér skråt op mod højre i det tomme område over 0,5-linjen
+    const labelX = padL + plotW*0.42;
+    const labelY = padT + plotH*0.22;
+    ctx.fillStyle = cssVar('--bg2');
+    ctx.fillRect(labelX-4, labelY-11, tw+8, 20);
+    ctx.fillStyle = cssVar('--hv'); ctx.textAlign='left'; ctx.textBaseline='middle';
+    ctx.fillText(labelTxt, labelX, labelY);
+  } else {
+    // Teorikurver
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = cssVar('--d0');
+    ctx.beginPath();
+    for(let phi=0; phi<=360; phi+=2){
+      const p = probD0(phi);
+      const x=xOf(phi), y=yOf(p);
+      if(phi===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = cssVar('--d1');
+    ctx.beginPath();
+    for(let phi=0; phi<=360; phi+=2){
+      const p = 1-probD0(phi);
+      const x=xOf(phi), y=yOf(p);
+      if(phi===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  // Nuværende φ (lodret markør)
+  const xm = xOf(state.phaseDeg);
+  ctx.strokeStyle = cssVar('--yellow'); ctx.lineWidth = 1.5; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(xm, padT); ctx.lineTo(xm, padT+plotH); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Empirisk punkt
+  const total = state.countD0 + state.countD1;
+  if(total > 0){
+    const fD0 = state.countD0/total, fD1 = state.countD1/total;
+    ctx.fillStyle = cssVar('--d0');
+    ctx.beginPath(); ctx.arc(xm, yOf(fD0), 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = cssVar('--bg0'); ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle = cssVar('--d1');
+    ctx.beginPath(); ctx.arc(xm, yOf(fD1), 5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = cssVar('--bg0'); ctx.stroke();
+  }
+
+  // Y-akse label
+  ctx.save();
+  ctx.translate(14, padT+plotH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle = textCol; ctx.font='bold 11px "Courier New",monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Sandsynlighed', 0, 0);
+  ctx.restore();
+}
+
+/* ============================================================
+   STATISTIK-PANEL
+   ============================================================ */
+function resetStatsOnly(){
+  state.countD0 = 0;
+  state.countD1 = 0;
+  state.particles = [];
+}
+
+function updateStats(){
+  const total = state.countD0 + state.countD1;
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sHv').textContent = state.whichPath ? 'TIL' : 'FRA';
+  document.getElementById('sHv').style.color = state.whichPath ? cssVar('--hv') : cssVar('--dim');
+  const pD0 = total>0 ? state.countD0/total : 0;
+  const pD1 = total>0 ? state.countD1/total : 0;
+  document.getElementById('barD0').style.width = (pD0*100).toFixed(1)+'%';
+  document.getElementById('barD1').style.width = (pD1*100).toFixed(1)+'%';
+  document.getElementById('pctD0').textContent = total>0 ? (pD0*100).toFixed(1).replace('.',',')+' %' : '— %';
+  document.getElementById('pctD1').textContent = total>0 ? (pD1*100).toFixed(1).replace('.',',')+' %' : '— %';
+  drawGraph();
+}
+
+/* ============================================================
+   AFFYRING
+   ============================================================ */
+function fireOnePhoton(){
+  const outcome = decideOutcome();
+  let duration = state.mode === 'auto' ? Math.max(350, Math.min(1400, 900*(1/state.rate)*3)) : 1500;
+  if (state.slowmo) duration *= 3.5;
+  state.particles.push({ startTime: performance.now(), duration, outcome, registered:false, hvTriggered:false });
+}
+
+document.getElementById('fireBtn').addEventListener('click', () => { ensureAudio(); fireOnePhoton(); });
+
+/* ============================================================
+   EVENT-LYTTERE
+   ============================================================ */
+const phaseSlider = document.getElementById('phaseSlider');
+const phaseVal = document.getElementById('phaseVal');
+phaseSlider.addEventListener('input', () => {
+  const newPhase = parseInt(phaseSlider.value);
+  if (newPhase !== state.phaseDeg) {
+    state.phaseDeg = newPhase;
+    phaseVal.textContent = state.phaseDeg + '°';
+    resetStatsOnly();
+    updateStats();
+  }
+});
+
+const hvTgl = document.getElementById('hvTgl');
+const hvLbl = document.getElementById('hvLbl');
+hvTgl.addEventListener('click', () => {
+  state.whichPath = !state.whichPath;
+  resetStatsOnly();
+  hvTgl.classList.toggle('on', state.whichPath);
+  hvLbl.textContent = state.whichPath ? 'TIL' : 'FRA';
+  hvLbl.style.color = state.whichPath ? cssVar('--hv') : cssVar('--dim');
+  updateStats();
+});
+
+document.getElementById('modeGrp').querySelectorAll('button').forEach(b=>{
+  b.addEventListener('click', () => {
+    document.getElementById('modeGrp').querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    state.mode = b.dataset.mode;
+    const isAuto = state.mode === 'auto';
+    document.getElementById('rateCtrl').classList.toggle('hide', !isAuto);
+    document.getElementById('autoBtnRow').classList.toggle('hide', !isAuto);
+    document.getElementById('fireBtn').classList.toggle('hide', isAuto);
+    if(!isAuto){ state.autoPlaying = false; document.getElementById('autoBtn').textContent = 'Start auto-fire'; }
+  });
+});
+
+const rateSlider = document.getElementById('rateSlider');
+const rateVal = document.getElementById('rateVal');
+rateSlider.addEventListener('input', () => {
+  state.rate = parseInt(rateSlider.value);
+  rateVal.textContent = state.rate;
+});
+
+document.getElementById('autoBtn').addEventListener('click', () => {
+  ensureAudio();
+  state.autoPlaying = !state.autoPlaying;
+  document.getElementById('autoBtn').textContent = state.autoPlaying ? 'Pause auto-fire' : 'Start auto-fire';
+  if(state.autoPlaying) state.nextFireDue = performance.now();
+});
+
+document.getElementById('muteBtn').addEventListener('click', () => {
+  state.muted = !state.muted;
+  document.getElementById('muteBtn').textContent = state.muted ? 'Lyd: fra' : 'Lyd: til';
+});
+
+const slowTgl = document.getElementById('slowTgl');
+const slowLbl = document.getElementById('slowLbl');
+slowTgl.addEventListener('click', () => {
+  state.slowmo = !state.slowmo;
+  slowTgl.classList.toggle('on', state.slowmo);
+  slowLbl.textContent = state.slowmo ? 'TIL' : 'FRA';
+  slowLbl.style.color = state.slowmo ? cssVar('--yellow') : cssVar('--dim');
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  resetStatsOnly();
+  updateStats();
+});
+
+window.addEventListener('resize', fitAll);
+
+/* ============================================================
+   HOVED-LOOP
+   ============================================================ */
+function tick(now){
+  if(state.mode === 'auto' && state.autoPlaying && now >= state.nextFireDue){
+    fireOnePhoton();
+    state.nextFireDue = now + 1000/state.rate;
+  }
+  state.particles = state.particles.filter(p => (now - p.startTime) < p.duration + 50);
+  drawMZ();
+  requestAnimationFrame(tick);
+}
+
+// Amplitude-pil-figur i opgave-modalen. Illustrerer pil-additionen med halvvinkel φ/2.
+function drawArrowFig(){
+  const host = document.getElementById('arrowFig');
+  if(!host) return;
+  const cyan = cssVar('--cyan');
+  const green = cssVar('--green');
+  const text = cssVar('--text');
+  const dim = cssVar('--dim');
+
+  // Geometri: φ=60° som eksempel. Origo i venstre midte.
+  const phi = 60 * Math.PI/180;
+  const L = 92;
+  const ox = 75, oy = 90; // origo (y ned)
+  const ax = ox + L*Math.cos(phi/2), ay = oy - L*Math.sin(phi/2);
+  const bx = ox + L*Math.cos(phi/2), by = oy + L*Math.sin(phi/2);
+  const sx = ox + 2*L*Math.cos(phi/2), sy = oy; // sum peger vandret (midt imellem)
+
+  function arrow(x1,y1,x2,y2,color,w){
+    const ang = Math.atan2(y2-y1, x2-x1);
+    const hl = 12, ha = 0.42;
+    const h1x = x2 - hl*Math.cos(ang-ha), h1y = y2 - hl*Math.sin(ang-ha);
+    const h2x = x2 - hl*Math.cos(ang+ha), h2y = y2 - hl*Math.sin(ang+ha);
+    return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+color+'" stroke-width="'+w+'" stroke-linecap="round"/>'+
+           '<polygon points="'+x2+','+y2+' '+h1x.toFixed(1)+','+h1y.toFixed(1)+' '+h2x.toFixed(1)+','+h2y.toFixed(1)+'" fill="'+color+'"/>';
+  }
+
+  // To små buer der markerer φ/2 over og under sum-pilen (sum halverer vinklen)
+  const rArc = 40;
+  // Øvre bue: fra sum-retning (vandret) op til vej A
+  const upTopX = ox + rArc*Math.cos(phi/2), upTopY = oy - rArc*Math.sin(phi/2);
+  const upBotX = ox + rArc, upBotY = oy;
+  const arcUp = '<path d="M '+upBotX.toFixed(1)+' '+upBotY.toFixed(1)+' A '+rArc+' '+rArc+' 0 0 0 '+upTopX.toFixed(1)+' '+upTopY.toFixed(1)+'" fill="none" stroke="'+dim+'" stroke-width="1.5"/>';
+  // Nedre bue: fra sum-retning ned til vej B
+  const dnTopX = ox + rArc, dnTopY = oy;
+  const dnBotX = ox + rArc*Math.cos(phi/2), dnBotY = oy + rArc*Math.sin(phi/2);
+  const arcDn = '<path d="M '+dnTopX.toFixed(1)+' '+dnTopY.toFixed(1)+' A '+rArc+' '+rArc+' 0 0 1 '+dnBotX.toFixed(1)+' '+dnBotY.toFixed(1)+'" fill="none" stroke="'+dim+'" stroke-width="1.5"/>';
+  // Label-positioner: midt i hver kile, lidt uden for buen
+  const rLbl = rArc + 16;
+  const upLblX = ox + rLbl*Math.cos(phi/4), upLblY = oy - rLbl*Math.sin(phi/4);
+  const dnLblX = ox + rLbl*Math.cos(phi/4), dnLblY = oy + rLbl*Math.sin(phi/4) + 4;
+
+  const svg =
+    '<svg viewBox="0 0 400 185" xmlns="http://www.w3.org/2000/svg">'+
+    arrow(ox,oy,sx,sy,green,4)+
+    arrow(ox,oy,ax,ay,cyan,3)+
+    arrow(ox,oy,bx,by,cyan,3)+
+    arcUp + arcDn +
+    '<text x="'+(ax+8)+'" y="'+(ay-2)+'" fill="'+cyan+'" font-family="Courier New,monospace" font-size="14" font-weight="bold">Vej A</text>'+
+    '<text x="'+(bx+8)+'" y="'+(by+16)+'" fill="'+cyan+'" font-family="Courier New,monospace" font-size="14" font-weight="bold">Vej B</text>'+
+    '<text x="'+(sx-18)+'" y="'+(sy-12)+'" fill="'+green+'" font-family="Courier New,monospace" font-size="14" font-weight="bold">Sum</text>'+
+    '<text x="'+upLblX.toFixed(1)+'" y="'+upLblY.toFixed(1)+'" fill="'+text+'" font-family="Courier New,monospace" font-size="13" font-weight="bold" text-anchor="middle">φ/2</text>'+
+    '<text x="'+dnLblX.toFixed(1)+'" y="'+dnLblY.toFixed(1)+'" fill="'+text+'" font-family="Courier New,monospace" font-size="13" font-weight="bold" text-anchor="middle">φ/2</text>'+
+    '<text x="200" y="176" fill="'+dim+'" font-family="Courier New,monospace" font-size="12" text-anchor="middle">Summens længde vokser med cos(φ/2)</text>'+
+    '</svg>';
+  host.innerHTML = svg;
+}
+
+// Forklaring-modal
+const explainModal = document.getElementById('explainModal');
+const explainBtn   = document.getElementById('explainBtn');
+const explainClose = document.getElementById('explainClose');
+function openExplain(){ if(explainModal){ explainModal.classList.remove('hide'); explainModal.scrollTop = 0; } }
+function closeExplain(){ if(explainModal){ explainModal.classList.add('hide'); } }
+if(explainBtn)   explainBtn.addEventListener('click', openExplain);
+if(explainClose) explainClose.addEventListener('click', closeExplain);
+if(explainModal) explainModal.addEventListener('click', (e) => { if (e.target === explainModal) closeExplain(); });
+
+// Elevopgave-modal
+const taskModal = document.getElementById('taskModal');
+const taskBtn   = document.getElementById('taskBtn');
+const taskClose = document.getElementById('taskClose');
+function openTask(){ if(taskModal){ taskModal.classList.remove('hide'); taskModal.scrollTop = 0; } }
+function closeTask(){ if(taskModal){ taskModal.classList.add('hide'); } }
+if(taskBtn)   taskBtn.addEventListener('click', openTask);
+if(taskClose) taskClose.addEventListener('click', closeTask);
+if(taskModal) taskModal.addEventListener('click', (e) => { if (e.target === taskModal) closeTask(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape'){
+    if (taskModal && !taskModal.classList.contains('hide')) closeTask();
+    if (explainModal && !explainModal.classList.contains('hide')) closeExplain();
+  }
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+fitAll();
+updateStats();
+drawArrowFig();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
